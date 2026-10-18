@@ -8,9 +8,26 @@ A Pebble watch app for your self-hosted [Memos](https://github.com/usememos/memo
 
 An *ostrakon* is a piece of broken pottery that people in antiquity used to write short notes on, which is also where the app icon comes from.
 
-| Recent | Memo | Tasks | Comments | Comment | Tags | Glance |
-|---|---|---|---|---|---|---|
-| ![Recent](store/screenshots/emery-1-recent.png) | ![Memo](store/screenshots/emery-2-memo.png) | ![Tasks](store/screenshots/emery-3-tasks.png) | ![Comments](store/screenshots/emery-4-comments.png) | ![Comment](store/screenshots/emery-5-comment.png) | ![Tags](store/screenshots/emery-6-tags.png) | ![Glance](store/screenshots/emery-7-glance.png) |
+<table>
+  <tr>
+    <th>Recent</th>
+    <th>Memo</th>
+    <th>Tasks</th>
+    <th>Comments</th>
+    <th>Comment</th>
+    <th>Tags</th>
+    <th>Glance</th>
+  </tr>
+  <tr>
+    <td><img src="store/screenshots/emery-1-recent.png" alt="Recent" width="100"></td>
+    <td><img src="store/screenshots/emery-2-memo.png" alt="Memo" width="100"></td>
+    <td><img src="store/screenshots/emery-3-tasks.png" alt="Tasks" width="100"></td>
+    <td><img src="store/screenshots/emery-4-comments.png" alt="Comments" width="100"></td>
+    <td><img src="store/screenshots/emery-5-comment.png" alt="Comment" width="100"></td>
+    <td><img src="store/screenshots/emery-6-tags.png" alt="Tags" width="100"></td>
+    <td><img src="store/screenshots/emery-7-glance.png" alt="Glance" width="100"></td>
+  </tr>
+</table>
 
 ### Origin
 

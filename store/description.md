@@ -20,11 +20,12 @@ Read
 • Recent, pinned and tagged memos, with "Load more"
 • Search by voice
 • Memos are shown with headings, checkboxes, lists and quotes
+• Comments are listed with their author and time
 • Recently loaded memos are cached on the phone and also open offline
 
 Organize
 • Tick off the tasks of a memo; changes are saved to your server
-• Pin, archive and delete memos
+• Pin, archive and delete memos; archive and delete comments
 • The launcher shows how many tasks are open in your to-do memos
 
 Setup: open the app settings on your phone, enter your Memos server URL and an access token, and test the connection right there.
@@ -57,11 +58,12 @@ Lesen
 • Neueste, angepinnte und getaggte Memos, mit „Mehr laden“
 • Suche per Sprache
 • Memos mit Überschriften, Checkboxen, Listen und Zitaten
+• Kommentare mit Autor und Uhrzeit
 • Zuletzt geladene Memos werden auf dem Handy zwischengespeichert und öffnen auch offline
 
 Organisieren
 • Aufgaben eines Memos abhaken; Änderungen werden auf deinem Server gespeichert
-• Memos anpinnen, archivieren und löschen
+• Memos anpinnen, archivieren und löschen, Kommentare archivieren und löschen
 • Der Launcher zeigt, wie viele Aufgaben in deinen To-do-Memos offen sind
 
 Einrichtung: Öffne die App-Einstellungen auf dem Handy, gib die URL deines Memos-Servers und einen Zugriffstoken ein und teste die Verbindung direkt dort.
@@ -78,6 +80,14 @@ Ostrakon ist eine unabhängige App für Memos (usememos.com) und gehört nicht z
 
 * `icon-144.png`: large store icon
 * `icon-48.png`: small store icon
+* `screenshots/`: seven screenshots per platform, taken in the emulator with demo data: `basalt-*` (rectangular, 144×168, also for diorite and flint), `chalk-*` (round, 180×180, also for gabbro) and `emery-*` (large, 200×228). In this order:
+  1. `recent`: the latest memos
+  2. `memo`: a memo with heading, tasks and tags
+  3. `tasks`: ticking off the tasks of a memo
+  4. `comments`: the comments of a memo with author and time
+  5. `comment`: a single comment
+  6. `tags`: the tags with their number of memos
+  7. `glance`: the app glance in the launcher with the number of open todos
 * `banner-720x320.png`: header banner
 * Screenshots still need to be taken per platform, e.g. with the emulator (`pebble install --emulator emery` and `pebble screenshot`)
 

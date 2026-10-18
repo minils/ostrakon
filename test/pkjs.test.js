@@ -327,6 +327,19 @@ setTimeout(() => {
   console.log('tags:', tags);
   assert.deepStrictEqual(tags[0], ['home', '#home', '40 memos']);
 
+  // without locale data localeCompare throws; tags are still sorted
+  const localeCompare = String.prototype.localeCompare;
+  String.prototype.localeCompare = () => {
+    throw new RangeError('Internal error. Icu error.');
+  };
+  try {
+    r = await request(3);
+  } finally {
+    String.prototype.localeCompare = localeCompare;
+  }
+  assert.deepStrictEqual(
+      r.slice(1).map(m => [m.ITEM_ID, m.ITEM_TITLE, m.ITEM_SUBTITLE]), tags);
+
   // by tag: across pages, limited to 20; "proj" also matches "proj/a"
   r = await request(4, 'work');
   assert.strictEqual(r[0].LIST_COUNT, 20);

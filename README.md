@@ -8,6 +8,21 @@ A Pebble watch app for your self-hosted [Memos](https://github.com/usememos/memo
 
 An *ostrakon* is a piece of broken pottery that people in antiquity used to write short notes on, which is also where the app icon comes from.
 
+<p align="center">
+  <img src="store/screenshots/basalt-1-recent.png" alt="Recent memos" width="144">
+  <img src="store/screenshots/basalt-2-memo.png" alt="A memo" width="144">
+  <img src="store/screenshots/basalt-3-tasks.png" alt="Tasks of a memo" width="144">
+  <img src="store/screenshots/basalt-4-comments.png" alt="Comments with author and time" width="144">
+  <img src="store/screenshots/basalt-5-comment.png" alt="A comment" width="144">
+</p>
+
+<p align="center">
+  <img src="store/screenshots/chalk-2-memo.png" alt="A memo" width="180">
+  <img src="store/screenshots/chalk-4-comments.png" alt="Comments with author and time" width="180">
+  <img src="store/screenshots/emery-2-memo.png" alt="A memo" width="200">
+  <img src="store/screenshots/emery-4-comments.png" alt="Comments with author and time" width="200">
+</p>
+
 ### Origin
 
 Ostrakon started as a fork of [pebble-memos](https://github.com/erimow/pebble-memos) by [Erik Morris (erimow)](https://github.com/erimow), which inspired it; the code has since been rewritten. Thank you, Erik, for the idea of sending a dictated note straight from the watch to Memos!

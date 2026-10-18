@@ -5,25 +5,24 @@
 
 #define TAG_LIST_MAX 30
 
-static RemoteListItem s_items[TAG_LIST_MAX];
+// the items only take memory while the window is open
 static RemoteList s_list = {
-    .items = s_items,
-    .capacity = TAG_LIST_MAX,
     .empty_text = "No tags",
 };
 
 static void select_row(uint16_t index, void *context) {
   remote_list_cancel(&s_list);
-  memo_list_push_tag(s_items[index].id);
+  memo_list_push_tag(s_list.items[index].id);
 }
 
 static void unload(void *context) {
   remote_list_cancel(&s_list);
   s_list.window = NULL;
+  remote_list_free(&s_list);
 }
 
 void tag_list_push(void) {
-  if (s_list.window) {
+  if (s_list.window || !remote_list_alloc(&s_list, TAG_LIST_MAX)) {
     return;
   }
   s_list.window = list_window_create(

@@ -146,6 +146,20 @@ static void request_page(RemoteList *list) {
   }
 }
 
+bool remote_list_alloc(RemoteList *list, uint16_t capacity) {
+  list->items = malloc(capacity * sizeof(RemoteListItem));
+  list->capacity = list->items ? capacity : 0;
+  list->count = 0;
+  return list->items != NULL;
+}
+
+void remote_list_free(RemoteList *list) {
+  free(list->items);
+  list->items = NULL;
+  list->capacity = 0;
+  list->count = 0;
+}
+
 void remote_list_load(RemoteList *list, CommAction action, const char *target,
                       const char *text) {
   list->count = 0;

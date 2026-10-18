@@ -26,19 +26,16 @@ static void select_row(uint16_t index, void *context) {
 static void unload(void *context) {
   remote_list_cancel(&s_list);
   s_list.window = NULL;
-  free(s_list.items);
-  s_list.items = NULL;
+  remote_list_free(&s_list);
 }
 
 void comments_window_push(const char *memo_name) {
   if (s_list.window) {
     return;
   }
-  s_list.items = malloc(COMMENTS_MAX * sizeof(RemoteListItem));
-  if (!s_list.items) {
+  if (!remote_list_alloc(&s_list, COMMENTS_MAX)) {
     return;
   }
-  s_list.capacity = COMMENTS_MAX;
   ui_copy_truncated(s_memo_name, memo_name, sizeof(s_memo_name));
   s_list.window = list_window_create(
       (ListWindowCallbacks){

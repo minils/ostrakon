@@ -8,11 +8,8 @@
 // three pages of 20 memos
 #define MEMO_LIST_MAX 60
 
-static RemoteListItem s_items[MEMO_LIST_MAX];
-static RemoteList s_list = {
-    .items = s_items,
-    .capacity = MEMO_LIST_MAX,
-};
+// the items only take memory while the window is open
+static RemoteList s_list;
 
 static void select_row(uint16_t index, void *context) {
   if (remote_list_is_more_row(&s_list, index)) {
@@ -21,18 +18,19 @@ static void select_row(uint16_t index, void *context) {
   }
   // an action replaces the pending request, so stop loading for good
   remote_list_cancel(&s_list);
-  memo_actions_open(s_items[index].id, true,
-                    s_items[index].flags & MEMO_FLAG_HAS_COMMENTS);
+  memo_actions_open(s_list.items[index].id, true,
+                    s_list.items[index].flags & MEMO_FLAG_HAS_COMMENTS);
 }
 
 static void unload(void *context) {
   remote_list_cancel(&s_list);
   s_list.window = NULL;
+  remote_list_free(&s_list);
 }
 
 static void push(CommAction action, const char *target, const char *text,
                  const char *empty_text, const char *title) {
-  if (s_list.window) {
+  if (s_list.window || !remote_list_alloc(&s_list, MEMO_LIST_MAX)) {
     return;
   }
   s_list.empty_text = empty_text;

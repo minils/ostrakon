@@ -16,7 +16,7 @@ typedef struct {
   MemoView *memo_view;
   char name[COMM_ID_SIZE];
   char parent[COMM_ID_SIZE];  // the memo of a comment, empty for a memo
-  char content[COMM_TEXT_SIZE];
+  char *content;              // COMM_TEXT_SIZE bytes while the window is open
   bool loading;
   bool has_comments;
 } MemoScreen;
@@ -25,7 +25,7 @@ static MemoScreen s_memo;
 static MemoScreen s_comment;
 
 static void show_message(MemoScreen *screen, const char *message) {
-  ui_copy_truncated(screen->content, message, sizeof(screen->content));
+  ui_copy_truncated(screen->content, message, COMM_TEXT_SIZE);
   memo_view_set_message(screen->memo_view, screen->content);
 }
 
@@ -43,8 +43,7 @@ static void content_handler(DictionaryIterator *iter, void *context) {
   } else if (comm_response_failed(iter)) {
     show_message(screen, comm_response_error(iter));
   } else {
-    comm_copy_string(iter, MESSAGE_KEY_TEXT, screen->content,
-                     sizeof(screen->content));
+    comm_copy_string(iter, MESSAGE_KEY_TEXT, screen->content, COMM_TEXT_SIZE);
     screen->has_comments =
         comm_get_int(iter, MESSAGE_KEY_ITEM_FLAGS, 0) & MEMO_FLAG_HAS_COMMENTS;
     memo_view_set_lines(screen->memo_view, screen->content);
@@ -126,10 +125,16 @@ static void window_unload(Window *window) {
   memo_view_destroy(screen->memo_view);
   window_destroy(screen->window);
   screen->window = NULL;
+  free(screen->content);
+  screen->content = NULL;
 }
 
 static void push(MemoScreen *screen, const char *name, const char *parent) {
   if (screen->window) {
+    return;
+  }
+  screen->content = malloc(COMM_TEXT_SIZE);
+  if (!screen->content) {
     return;
   }
   ui_copy_truncated(screen->name, name, sizeof(screen->name));

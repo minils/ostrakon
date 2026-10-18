@@ -14,6 +14,7 @@ An *ostrakon* is a piece of broken pottery that people in antiquity used to writ
   <img src="store/screenshots/basalt-3-tasks.png" alt="Tasks of a memo" width="144">
   <img src="store/screenshots/basalt-4-comments.png" alt="Comments with author and time" width="144">
   <img src="store/screenshots/basalt-5-comment.png" alt="A comment" width="144">
+  <img src="store/screenshots/basalt-6-tags.png" alt="Tags with their number of memos" width="144">
 </p>
 
 <p align="center">

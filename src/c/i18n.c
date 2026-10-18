@@ -35,6 +35,7 @@ static const Translation GERMAN[] = {
     {"Yes, discard", "Ja, verwerfen"},
     {"Open", "Öffnen"},
     {"Tasks", "Aufgaben"},
+    {"New comment", "Neuer Kommentar"},
     {"Pin / Unpin", "Anpinnen / Lösen"},
     {"Archive", "Archivieren"},
     {"Delete", "Löschen"},
@@ -66,6 +67,7 @@ static const Translation GERMAN[] = {
     {"No pinned memos", "Keine angepinnten Memos"},
     {"No tags", "Keine Tags"},
     {"No tasks", "Keine Aufgaben"},
+    {"No comments yet", "Noch keine Kommentare"},
     // connection
     {"No response from phone", "Keine Antwort vom Handy"},
     {"Phone not connected", "Handy nicht verbunden"},

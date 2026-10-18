@@ -26,7 +26,6 @@ var GERMAN = {
   'Server not reachable': 'Server nicht erreichbar',
   'Pinned': 'Angepinnt',
   'Unpinned': 'Gelöst',
-  'No comments yet': 'Noch keine Kommentare',
   '(empty)': '(leer)',
   '1 memo': '1 Memo'
 };

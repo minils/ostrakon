@@ -8,22 +8,9 @@ A Pebble watch app for your self-hosted [Memos](https://github.com/usememos/memo
 
 An *ostrakon* is a piece of broken pottery that people in antiquity used to write short notes on, which is also where the app icon comes from.
 
-<p align="center">
-  <img src="store/screenshots/basalt-1-recent.png" alt="Recent memos" width="144">
-  <img src="store/screenshots/basalt-2-memo.png" alt="A memo" width="144">
-  <img src="store/screenshots/basalt-3-tasks.png" alt="Tasks of a memo" width="144">
-  <img src="store/screenshots/basalt-4-comments.png" alt="Comments with author and time" width="144">
-  <img src="store/screenshots/basalt-5-comment.png" alt="A comment" width="144">
-  <img src="store/screenshots/basalt-6-tags.png" alt="Tags with their number of memos" width="144">
-</p>
-
-<p align="center">
-  <img src="store/screenshots/basalt-7-glance.png" alt="App glance with the open todos in the launcher" width="144">
-  <img src="store/screenshots/chalk-2-memo.png" alt="A memo" width="180">
-  <img src="store/screenshots/chalk-4-comments.png" alt="Comments with author and time" width="180">
-  <img src="store/screenshots/emery-2-memo.png" alt="A memo" width="200">
-  <img src="store/screenshots/emery-4-comments.png" alt="Comments with author and time" width="200">
-</p>
+| Recent | Memo | Tasks | Comments | Comment | Tags | Glance |
+|---|---|---|---|---|---|---|
+| ![Recent](store/screenshots/emery-1-recent.png) | ![Memo](store/screenshots/emery-2-memo.png) | ![Tasks](store/screenshots/emery-3-tasks.png) | ![Comments](store/screenshots/emery-4-comments.png) | ![Comment](store/screenshots/emery-5-comment.png) | ![Tags](store/screenshots/emery-6-tags.png) | ![Glance](store/screenshots/emery-7-glance.png) |
 
 ### Origin
 

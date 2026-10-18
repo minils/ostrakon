@@ -18,6 +18,7 @@ An *ostrakon* is a piece of broken pottery that people in antiquity used to writ
 </p>
 
 <p align="center">
+  <img src="store/screenshots/basalt-7-glance.png" alt="App glance with the open todos in the launcher" width="144">
   <img src="store/screenshots/chalk-2-memo.png" alt="A memo" width="180">
   <img src="store/screenshots/chalk-4-comments.png" alt="Comments with author and time" width="180">
   <img src="store/screenshots/emery-2-memo.png" alt="A memo" width="200">

@@ -80,13 +80,14 @@ Ostrakon ist eine unabhängige App für Memos (usememos.com) und gehört nicht z
 
 * `icon-144.png`: large store icon
 * `icon-48.png`: small store icon
-* `screenshots/`: six screenshots per platform, taken in the emulator with demo data: `basalt-*` (rectangular, 144×168, also for diorite and flint), `chalk-*` (round, 180×180, also for gabbro) and `emery-*` (large, 200×228). In this order:
+* `screenshots/`: seven screenshots per platform, taken in the emulator with demo data: `basalt-*` (rectangular, 144×168, also for diorite and flint), `chalk-*` (round, 180×180, also for gabbro) and `emery-*` (large, 200×228). In this order:
   1. `recent`: the latest memos
   2. `memo`: a memo with heading, tasks and tags
   3. `tasks`: ticking off the tasks of a memo
   4. `comments`: the comments of a memo with author and time
   5. `comment`: a single comment
   6. `tags`: the tags with their number of memos
+  7. `glance`: the app glance in the launcher with the number of open todos
 * `banner-720x320.png`: header banner
 * Screenshots still need to be taken per platform, e.g. with the emulator (`pebble install --emulator emery` and `pebble screenshot`)
 

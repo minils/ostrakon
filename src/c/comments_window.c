@@ -8,10 +8,8 @@
 // must match MAX_COMMENT_ITEMS in index.js
 #define COMMENTS_MAX 20
 
-static RemoteListItem s_items[COMMENTS_MAX];
+// the items only take memory while the window is open
 static RemoteList s_list = {
-    .items = s_items,
-    .capacity = COMMENTS_MAX,
     .empty_text = "No comments yet",
 };
 static char s_memo_name[COMM_ID_SIZE];
@@ -22,18 +20,25 @@ static void select_row(uint16_t index, void *context) {
   }
   // an action replaces the pending request, so stop loading for good
   remote_list_cancel(&s_list);
-  memo_actions_open_comment(s_items[index].id, s_memo_name, true);
+  memo_actions_open_comment(s_list.items[index].id, s_memo_name, true);
 }
 
 static void unload(void *context) {
   remote_list_cancel(&s_list);
   s_list.window = NULL;
+  free(s_list.items);
+  s_list.items = NULL;
 }
 
 void comments_window_push(const char *memo_name) {
   if (s_list.window) {
     return;
   }
+  s_list.items = malloc(COMMENTS_MAX * sizeof(RemoteListItem));
+  if (!s_list.items) {
+    return;
+  }
+  s_list.capacity = COMMENTS_MAX;
   ui_copy_truncated(s_memo_name, memo_name, sizeof(s_memo_name));
   s_list.window = list_window_create(
       (ListWindowCallbacks){

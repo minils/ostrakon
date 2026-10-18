@@ -112,6 +112,18 @@ function formatDate(isoString) {
   return i18n.formatDate(d, currentLanguage());
 }
 
+// Compares texts for sorting. Some JS runtimes, e.g. the one in the
+// emulator, lack locale data and throw from localeCompare.
+function compareText(a, b) {
+  try {
+    return a.localeCompare(b);
+  } catch (e) {
+    var x = a.toLowerCase(), y = b.toLowerCase();
+    if (x !== y) return x < y ? -1 : 1;
+    return a < b ? -1 : a > b ? 1 : 0;
+  }
+}
+
 /* =========================================================
  * Memo parser
  * ========================================================= */
@@ -848,7 +860,7 @@ function handleListTags(req) {
         });
         var tags = Object.keys(counts)
                        .sort(function(a, b) {
-                         return counts[b] - counts[a] || a.localeCompare(b);
+                         return counts[b] - counts[a] || compareText(a, b);
                        })
                        .slice(0, MAX_TAG_ITEMS);
 

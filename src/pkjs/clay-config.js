@@ -65,7 +65,10 @@ module.exports = function(t) {
           'options': [
             {'label': t.languageAuto, 'value': 'auto'},
             {'label': 'English', 'value': 'en'},
-            {'label': 'Deutsch', 'value': 'de'}
+            {'label': 'Deutsch', 'value': 'de'},
+            {'label': 'Français', 'value': 'fr'},
+            {'label': 'Español', 'value': 'es'},
+            {'label': 'Italiano', 'value': 'it'}
           ]
         }
       ]

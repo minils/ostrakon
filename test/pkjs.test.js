@@ -709,11 +709,76 @@ setTimeout(() => {
       germanPage.includes('Sprache'));
   assert.ok(germanPage.includes('Test von dieser Seite nicht m'));
 
+  // French, Spanish and Italian, each with its spoken keywords
+  const languages = [
+    {
+      language: 'fr',
+      code: 3,
+      notice: 'Connecté à Memos',
+      date: /^1\d oct\., \d\d:\d\d/,
+      error: 'Erreur du serveur 404',
+      spoken: 'Grand titre Courses nouvelle ligne case à cocher Lait. ' +
+          'Hashtag Cuisine',
+      content: '# Courses\n- [ ] Lait.\n\n#pebble #cuisine',
+      page: 'Tester la connexion'
+    },
+    {
+      language: 'es',
+      code: 4,
+      notice: 'Conectado a Memos',
+      date: /^1\d oct, \d\d:\d\d/,
+      error: 'Error del servidor 404',
+      spoken: 'Título grande Compra nueva línea casilla de verificación ' +
+          'Leche. Hashtag Cocina',
+      content: '# Compra\n- [ ] Leche.\n\n#pebble #cocina',
+      page: 'Probar conexión'
+    },
+    {
+      language: 'it',
+      code: 5,
+      notice: 'Connesso a Memos',
+      date: /^1\d ott, \d\d:\d\d/,
+      error: 'Errore del server 404',
+      spoken: 'Titolo grande Spesa nuova riga casella di controllo Latte. ' +
+          'Hashtag Cucina',
+      content: '# Spesa\n- [ ] Latte.\n\n#pebble #cucina',
+      page: 'Prova connessione'
+    }
+  ];
+  for (const l of languages) {
+    before = received.length;
+    listeners.webviewclosed(
+        {response: clayResponse({...good, language: l.language})});
+    await new Promise(res => setTimeout(res, 100));
+    pushed = received.slice(before);
+    assert.deepStrictEqual(
+        pushed.find(m => 'VIBRATE' in m), {VIBRATE: 1, LANGUAGE: l.code});
+    assert.deepStrictEqual(
+        pushed.find(m => 'NOTICE' in m), {NOTICE: l.notice, STATUS: 0});
+    r = await request(2);
+    assert.match(r[1].ITEM_SUBTITLE, l.date);
+    r = await request(5, 'memos/missing');
+    assert.strictEqual(r[0].TEXT, l.error);
+    r = await request(1, null, l.spoken);
+    assert.strictEqual(r[0].STATUS, 0);
+    assert.strictEqual(created[created.length - 1].content, l.content);
+    listeners.showConfiguration({});
+    const page = decodeURIComponent(
+        openedUrls.pop().replace(/^data:text\/html;charset=utf-8,/, ''));
+    assert.ok(page.includes(l.page), l.language);
+  }
+
   store.ostrakon_settings = JSON.stringify({...good, language: 'auto'});
   const watchInfo = Pebble.getActiveWatchInfo;
   Pebble.getActiveWatchInfo = () => ({...watchInfo(), language: 'de_DE'});
   r = await request(5, 'memos/missing');
   assert.strictEqual(r[0].TEXT, 'Serverfehler 404');
+  Pebble.getActiveWatchInfo = () => ({...watchInfo(), language: 'it_IT'});
+  r = await request(5, 'memos/missing');
+  assert.strictEqual(r[0].TEXT, 'Errore del server 404');
+  Pebble.getActiveWatchInfo = () => ({...watchInfo(), language: 'pt_BR'});
+  r = await request(5, 'memos/missing');
+  assert.strictEqual(r[0].TEXT, 'Server error 404');
   Pebble.getActiveWatchInfo = watchInfo;
   r = await request(5, 'memos/missing');
   assert.strictEqual(r[0].TEXT, 'Server error 404');

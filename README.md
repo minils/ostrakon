@@ -61,7 +61,7 @@ Ostrakon started as a fork of [pebble-memos](https://github.com/erimow/pebble-me
 
 **Languages**
 
-The app speaks English and German. By default it follows the language of the watch; the language can also be chosen in the settings.
+The app speaks English, German, French, Spanish and Italian. By default it follows the language of the watch; the language can also be chosen in the settings.
 
 **Watch support**
 
@@ -71,12 +71,16 @@ Built for all current Pebble platforms, including the new Core Devices watches: 
 
 Some spoken phrases are turned into markdown when a memo is sent:
 
-| Say (English) | Say (German) | Result |
-| --- | --- | --- |
-| checkbox, check box | Checkbox, Kontrollkästchen | a task, `- [ ] ` |
-| title big / medium / small | Überschrift (or Titel) groß / mittel / klein | a heading, `#`, `##` or `###` |
-| new line | neue Zeile | a line break |
-| hashtag *word* | Hashtag *Wort* | the tag `#word` |
+| Result | English | German | French | Spanish | Italian |
+| --- | --- | --- | --- | --- | --- |
+| a task, `- [ ] ` | checkbox, check box | Checkbox, Kontrollkästchen | case à cocher | casilla de verificación | casella di controllo |
+| a heading, `#` | title big | Überschrift (or Titel) groß | grand titre, titre grand | título grande | titolo grande |
+| a heading, `##` | title medium | Überschrift (or Titel) mittel | titre moyen | título mediano | titolo medio |
+| a heading, `###` | title small | Überschrift (or Titel) klein | petit titre, titre petit | título pequeño | titolo piccolo |
+| a line break | new line | neue Zeile | nouvelle ligne | nueva línea | nuova riga |
+| the tag `#word` | hashtag *word* | Hashtag *Wort* | hashtag *mot* | hashtag *palabra* | hashtag *parola* |
+
+The keywords of all languages work whatever the language setting.
 
 ### Settings
 
@@ -88,7 +92,7 @@ Open the app settings in the Pebble app on your phone:
 * **Default Tags** added to every new memo, e.g. `#pebble`
 * **To-do Tag** whose open tasks the app glance counts, `#todo` by default
 * **Vibrate** on success and errors
-* **Language**: automatic (the watch language), English or Deutsch
+* **Language**: automatic (the watch language), English, Deutsch, Français, Español or Italiano
 
 ### Development
 

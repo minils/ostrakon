@@ -6,6 +6,9 @@ typedef enum {
   LanguageAuto = 0,  // follows the watch's system language
   LanguageEnglish = 1,
   LanguageGerman = 2,
+  LanguageFrench = 3,
+  LanguageSpanish = 4,
+  LanguageItalian = 5,
 } Language;
 
 void i18n_init(void);

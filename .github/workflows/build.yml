@@ -1,0 +1,55 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Test phone-side JS
+        run: node test/pkjs.test.js
+
+      - name: Check formatting (clang-format, Google style)
+        run: |
+          clang-format --version
+          clang-format --dry-run --Werror src/c/*.c src/c/*.h src/pkjs/*.js test/*.js
+
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Install Pebble tool and SDK
+        run: |
+          uv tool install pebble-tool --python 3.13
+          yes | pebble sdk install latest
+
+      # stdin from /dev/null so an unexpected prompt fails instead of hanging
+      - name: Build
+        timeout-minutes: 10
+        # the bundle is named after the checkout folder, so give it the app name
+        run: |
+          pebble build < /dev/null
+          mv build/*.pbw build/ostrakon.pbw
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Ostrakon
+          path: build/ostrakon.pbw

@@ -1,0 +1,52 @@
+{
+  "name": "ostrakon",
+  "author": "minils",
+  "version": "1.0.0",
+  "keywords": ["pebble-app"],
+  "private": true,
+  "dependencies": {},
+  "pebble": {
+    "displayName": "Ostrakon",
+    "uuid": "6685e502-776e-4f88-b659-97fdff9973de",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": [
+      "basalt",
+      "chalk",
+      "diorite",
+      "emery",
+      "flint",
+      "gabbro"
+    ],
+  "capabilities": [
+    "configurable",
+    "microphone"
+  ],
+    "watchapp": {
+      "watchface": false
+    },
+    "messageKeys": [
+      "REQUEST_ID",
+      "ACTION",
+      "STATUS",
+      "TEXT",
+      "ITEM_ID",
+      "ITEM_INDEX",
+      "LIST_COUNT",
+      "VIBRATE",
+      "ITEM_FLAGS",
+      "NOTICE",
+      "GLANCE_COUNT",
+      "ITEMS",
+      "LANGUAGE"
+    ],
+    "resources": {
+      "media": [{
+        "menuIcon": true,
+      	"type": "bitmap",
+      	"name": "IMAGE_ICON",
+      	"file": "memosicon.png"
+      }]
+    }
+  }
+}

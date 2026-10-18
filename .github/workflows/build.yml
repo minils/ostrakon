@@ -44,10 +44,12 @@ jobs:
       # stdin from /dev/null so an unexpected prompt fails instead of hanging
       - name: Build
         timeout-minutes: 10
-        # the bundle is named after the checkout folder, so give it the app name
+        # the bundle is named after the checkout folder, so give it the app
+        # name unless the folder already has it
         run: |
           pebble build < /dev/null
-          mv build/*.pbw build/ostrakon.pbw
+          pbw=$(ls build/*.pbw)
+          if [ "$pbw" != build/ostrakon.pbw ]; then mv "$pbw" build/ostrakon.pbw; fi
 
       - uses: actions/upload-artifact@v4
         with:

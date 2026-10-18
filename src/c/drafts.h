@@ -5,7 +5,10 @@
 
 void drafts_init(void);
 int drafts_count(void);
-const char *drafts_get(int index);
+
+// Copies draft `index` into buffer, cut to fit at a character boundary;
+// an index without a draft, e.g. -1, gives an empty text
+void drafts_read(int index, char *buffer, size_t size);
 
 // Saves text as draft `index`, or as a new draft if index is -1.
 // Returns the index of the saved draft, or -1 if no slot is free.

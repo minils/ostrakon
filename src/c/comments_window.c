@@ -1,112 +1,63 @@
 #include "comments_window.h"
 
-#include "comm.h"
-#include "compose_window.h"
 #include "i18n.h"
-#include "memo_view.h"
+#include "memo_actions.h"
+#include "remote_list.h"
 #include "ui.h"
 
-static Window *s_window;
-static Layer *s_title_bar;
-static Layer *s_select_hint;
-static Layer *s_loading_layer;
-static MemoView *s_memo_view;
-static char s_name[COMM_ID_SIZE];
-static char s_content[COMM_TEXT_SIZE];
-static bool s_loading;
+// must match MAX_COMMENT_ITEMS in index.js
+#define COMMENTS_MAX 20
 
-static void show_message(const char *message) {
-  ui_copy_truncated(s_content, message, sizeof(s_content));
-  memo_view_set_message(s_memo_view, s_content);
-}
+// the items only take memory while the window is open
+static RemoteList s_list = {
+    .empty_text = "No comments yet",
+};
+static char s_memo_name[COMM_ID_SIZE];
 
-static void set_loading(bool loading) {
-  s_loading = loading;
-  ui_loading_layer_set_active(s_loading_layer, loading);
-}
-
-static void comments_handler(DictionaryIterator *iter, void *context) {
-  comm_finish();
-  set_loading(false);
-  if (!iter) {
-    show_message(tr("No response from phone"));
-  } else if (comm_response_failed(iter)) {
-    show_message(comm_response_error(iter));
-  } else {
-    comm_copy_string(iter, MESSAGE_KEY_TEXT, s_content, sizeof(s_content));
-    memo_view_set_lines(s_memo_view, s_content);
+static void select_row(uint16_t index, void *context) {
+  if (remote_list_is_more_row(&s_list, index)) {
+    return;
   }
+  // an action replaces the pending request, so stop loading for good
+  remote_list_cancel(&s_list);
+  memo_actions_open_comment(s_list.items[index].id, s_memo_name, true);
 }
 
-static void load_comments(void) {
-  show_message("");
-  set_loading(comm_request(CommActionListComments, s_name, NULL,
-                           comments_handler, NULL));
-  if (!s_loading) {
-    show_message(tr("Phone not connected"));
-  }
-}
-
-static void select_click_handler(ClickRecognizerRef ref, void *context) {
-  if (!s_loading) {
-    compose_window_push_comment(s_name);
-  }
-}
-
-static void click_config_provider(void *context) {
-  window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
-}
-
-static void window_load(Window *window) {
-  Layer *root = window_get_root_layer(window);
-  GRect bounds = layer_get_bounds(root);
-
-  GRect view_frame = bounds;
-  view_frame.origin.y = UI_TITLE_BAR_HEIGHT;
-  view_frame.size.h -= UI_TITLE_BAR_HEIGHT;
-  s_memo_view =
-      memo_view_create(root, view_frame, click_config_provider, window);
-
-  s_title_bar = ui_title_bar_create(bounds, tr("Comments"));
-  layer_add_child(root, s_title_bar);
-  s_select_hint = ui_select_hint_create(bounds);
-  layer_add_child(root, s_select_hint);
-  s_loading_layer = ui_loading_layer_create(view_frame);
-  layer_add_child(root, s_loading_layer);
-
-  load_comments();
-}
-
-static void window_unload(Window *window) {
-  // only cancel our own request
-  if (s_loading) {
-    comm_finish();
-    s_loading = false;
-  }
-  ui_loading_layer_destroy(s_loading_layer);
-  layer_destroy(s_select_hint);
-  layer_destroy(s_title_bar);
-  memo_view_destroy(s_memo_view);
-  window_destroy(s_window);
-  s_window = NULL;
+static void unload(void *context) {
+  remote_list_cancel(&s_list);
+  s_list.window = NULL;
+  remote_list_free(&s_list);
 }
 
 void comments_window_push(const char *memo_name) {
-  if (s_window) {
+  if (s_list.window) {
     return;
   }
-  ui_copy_truncated(s_name, memo_name, sizeof(s_name));
-
-  s_window = window_create();
-  window_set_window_handlers(s_window, (WindowHandlers){
-                                           .load = window_load,
-                                           .unload = window_unload,
-                                       });
-  window_stack_push(s_window, true);
+  if (!remote_list_alloc(&s_list, COMMENTS_MAX)) {
+    return;
+  }
+  ui_copy_truncated(s_memo_name, memo_name, sizeof(s_memo_name));
+  s_list.window = list_window_create(
+      (ListWindowCallbacks){
+          .get_count = remote_list_get_count,
+          .get_row = remote_list_get_row,
+          .select = select_row,
+          .unload = unload,
+      },
+      &s_list);
+  list_window_set_title(s_list.window, tr("Comments"));
+  list_window_push(s_list.window);
+  remote_list_load(&s_list, CommActionListComments, s_memo_name, NULL);
 }
 
 void comments_window_reload(const char *memo_name) {
-  if (s_window && strcmp(s_name, memo_name) == 0) {
-    load_comments();
+  if (s_list.window && strcmp(s_memo_name, memo_name) == 0) {
+    remote_list_load(&s_list, CommActionListComments, s_memo_name, NULL);
+  }
+}
+
+void comments_window_remove(const char *comment_name) {
+  if (s_list.window) {
+    remote_list_remove(&s_list, comment_name);
   }
 }

@@ -23,6 +23,7 @@ enum {
 };
 
 static char s_name[COMM_ID_SIZE];
+static char s_parent[COMM_ID_SIZE];  // the memo of a comment, else empty
 static int s_pending_action;
 
 static void modify_handler(DictionaryIterator *iter, void *context) {
@@ -40,6 +41,7 @@ static void modify_handler(DictionaryIterator *iter, void *context) {
   // the memo is gone from the normal list either way
   memo_window_close(s_name);
   memo_list_remove(s_name);
+  comments_window_remove(s_name);
   toast_show(
       s_pending_action == MemoActionArchive ? tr("Archived") : tr("Deleted"),
       true);
@@ -71,7 +73,11 @@ static void modify(CommAction action) {
 static void action_chosen(int id, void *context) {
   switch (id) {
     case MemoActionOpen:
-      memo_window_push(s_name);
+      if (s_parent[0]) {
+        memo_window_push_comment(s_name, s_parent);
+      } else {
+        memo_window_push(s_name);
+      }
       break;
     case MemoActionTasks:
       tasks_window_push(s_name);
@@ -88,7 +94,8 @@ static void action_chosen(int id, void *context) {
       modify(CommActionDelete);
       break;
     case MemoActionComment:
-      compose_window_push_comment(s_name);
+      // a comment on a comment goes to the memo
+      compose_window_push_comment(s_parent[0] ? s_parent : s_name);
       break;
     case MemoActionAppend:
       compose_window_push_append(s_name);
@@ -126,5 +133,28 @@ void memo_actions_open(const char *memo_name, bool include_open,
                                 .confirm_label = tr("Yes, delete")};
 
   ui_copy_truncated(s_name, memo_name, sizeof(s_name));
+  s_parent[0] = '\0';
+  actions_open(items, count, action_chosen, NULL);
+}
+
+void memo_actions_open_comment(const char *comment_name, const char *memo_name,
+                               bool include_open) {
+  ActionItem items[ACTIONS_MAX_ITEMS];
+  int count = 0;
+  if (include_open) {
+    items[count++] = (ActionItem){.label = tr("Open"), .id = MemoActionOpen};
+  }
+  items[count++] = (ActionItem){.label = tr("Tasks"), .id = MemoActionTasks};
+  items[count++] = (ActionItem){.label = tr("Append"), .id = MemoActionAppend};
+  items[count++] =
+      (ActionItem){.label = tr("New comment"), .id = MemoActionComment};
+  items[count++] =
+      (ActionItem){.label = tr("Archive"), .id = MemoActionArchive};
+  items[count++] = (ActionItem){.label = tr("Delete"),
+                                .id = MemoActionDelete,
+                                .confirm_label = tr("Yes, delete")};
+
+  ui_copy_truncated(s_name, comment_name, sizeof(s_name));
+  ui_copy_truncated(s_parent, memo_name, sizeof(s_parent));
   actions_open(items, count, action_chosen, NULL);
 }

@@ -49,6 +49,7 @@ memos.push({
   name: 'memos/c2',
   content: 'second **reply**',
   parent: 'memos/m3',
+  creator: 'users/1',
   tags: [],
   createTime: '2026-10-17T10:00:00Z',
   state: 'NORMAL'
@@ -57,6 +58,7 @@ memos.push({
   name: 'memos/c3',
   content: 'first reply',
   parent: 'memos/m3',
+  creator: 'users/alice',
   tags: [],
   createTime: '2026-10-16T10:00:00Z',
   state: 'NORMAL'
@@ -84,6 +86,7 @@ memos.push({
 });
 const created = [], comments = [];
 let serverDown = false;
+let userRequests = 0;
 const server = http.createServer((req, res) => {
   if (serverDown) return req.socket.destroy();
   let body = '';
@@ -128,6 +131,11 @@ const server = http.createServer((req, res) => {
     if ((m = u.pathname.match(/^\/api\/v1\/(memos\/[\w]+)\/comments$/)) &&
         req.method === 'GET') {
       return send(200, {memos: memos.filter(x => x.parent === m[1])});
+    }
+    if (req.method === 'GET' && u.pathname === '/api/v1/users/1') {
+      userRequests++;
+      return send(
+          200, {name: 'users/1', username: 'nils', displayName: 'Nils'});
     }
     if ((m = u.pathname.match(/^\/api\/v1\/(memos\/[\w]+)$/))) {
       const memo = memos.find(x => x.name === m[1]);
@@ -534,13 +542,29 @@ setTimeout(() => {
   r = await request(5, 'memos/m4');
   assert.strictEqual(r[0].ITEM_FLAGS, 0);
 
-  // comments are listed separately, oldest first
+  // comments are listed separately, oldest first, with author and date;
+  // a user without a display name falls back to the name in the creator
   r = await request(15, 'memos/m3');
-  assert.deepStrictEqual(r[0].TEXT.split('\n'), [
-    'mOct 16, 10:00', 'pfirst reply', '-', 'mOct 17, 10:00', 'psecond reply'
-  ]);
+  assert.deepStrictEqual(
+      r.slice(1).map(m => [m.ITEM_ID, m.ITEM_TITLE, m.ITEM_SUBTITLE]), [
+        ['memos/c3', 'first reply', 'alice \u00b7 Oct 16, 10:00'],
+        ['memos/c2', 'second **reply**', 'Nils \u00b7 Oct 17, 10:00']
+      ]);
   r = await request(15, 'memos/m4');
-  assert.strictEqual(r[0].TEXT, 'pNo comments yet');
+  assert.strictEqual(r[0].LIST_COUNT, 0);
+
+  // a comment opened on its own starts with author and date; user names
+  // are only looked up once
+  r = await request(5, 'memos/c2');
+  assert.deepStrictEqual(
+      r[0].TEXT.split('\n'), ['mNils \u00b7 Oct 17, 10:00', 'psecond reply']);
+  assert.strictEqual(userRequests, 1);
+
+  // archived comments are not listed
+  r = await request(6, 'memos/c3');
+  assert.strictEqual(r[0].STATUS, 0);
+  r = await request(15, 'memos/m3');
+  assert.deepStrictEqual(r.slice(1).map(m => m.ITEM_ID), ['memos/c2']);
 
   // append: new lines go above the trailing tags
   r = await request(11, 'memos/new1', 'check box eggs');
@@ -624,8 +648,8 @@ setTimeout(() => {
   assert.match(r.slice(1)[0].ITEM_SUBTITLE, /^\d+ Memos$/);
   r = await request(2);
   assert.match(r[1].ITEM_SUBTITLE, /^1\d\. Okt, \d\d:\d\d/);
-  r = await request(15, 'memos/m4');
-  assert.strictEqual(r[0].TEXT, 'pNoch keine Kommentare');
+  r = await request(15, 'memos/m3');
+  assert.strictEqual(r[1].ITEM_SUBTITLE, 'Nils \u00b7 17. Okt, 10:00');
   r = await request(5, 'memos/missing');
   assert.deepStrictEqual([r[0].STATUS, r[0].TEXT], [1, 'Serverfehler 404']);
   r = await request(

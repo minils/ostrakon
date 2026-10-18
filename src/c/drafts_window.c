@@ -21,7 +21,7 @@ static int s_selected;
 
 static void update_previews(void) {
   for (int i = 0; i < drafts_count(); i++) {
-    ui_copy_truncated(s_previews[i], drafts_get(i), PREVIEW_SIZE);
+    drafts_read(i, s_previews[i], PREVIEW_SIZE);
   }
   list_window_reload(s_window);
 }

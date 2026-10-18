@@ -865,19 +865,87 @@ function handleListTags(req) {
       });
 }
 
-// Comments oldest first, each with its date, separated by rules
-function commentLines(comments) {
-  var lines = [];
-  comments.slice()
-      .sort(function(a, b) {
-        return memoTime(a) - memoTime(b);
+/* =========================================================
+ * Comments
+ * ========================================================= */
+
+// must match COMMENTS_MAX in comments_window.c
+var MAX_COMMENT_ITEMS = 20;
+
+// Display names of users by resource name, e.g. "users/1"
+var userNames = {};
+
+function userFallbackName(name) {
+  // newer servers name users after their username, older ones by id
+  var id = (name || '').replace(/^users\//, '');
+  return /^\d*$/.test(id) ? '' : id;
+}
+
+// Looks up the display names of the creators of the given memos
+function resolveCreators(memos, callback) {
+  var pending = [];
+  memos.forEach(function(memo) {
+    var name = memo.creator;
+    if (name && !(name in userNames) && pending.indexOf(name) < 0) {
+      pending.push(name);
+    }
+  });
+  if (pending.length === 0) {
+    callback();
+    return;
+  }
+  var left = pending.length;
+  pending.forEach(function(name) {
+    apiRequest('GET', name, null, function(err, user) {
+      var displayName =
+          !err && user && (user.displayName || user.nickname || user.username);
+      // failures are remembered too, so they are not asked again
+      userNames[name] = displayName || userFallbackName(name);
+      if (--left === 0) callback();
+    });
+  });
+}
+
+// "<author> · <date>", or the part that is known
+function commentInfo(comment) {
+  return [
+    userNames[comment.creator] || userFallbackName(comment.creator),
+    formatDate(comment.displayTime || comment.createTime || comment.updateTime)
+  ]
+      .filter(function(part) {
+        return part;
       })
-      .forEach(function(comment, index) {
-        if (index > 0) lines.push('-');
-        lines.push('m' + formatDate(comment.displayTime || comment.createTime));
-        lines = lines.concat(markdownLines(comment.content || ''));
-      });
-  return lines;
+      .join(' \u00b7 ');
+}
+
+// Comments of a memo as list items, oldest first
+function handleListComments(req) {
+  apiRequest('GET', req.target + '/comments', null, function(err, data) {
+    if (err) {
+      replyError(req, err);
+      return;
+    }
+    var comments = (data.memos || [])
+                       .filter(function(comment) {
+                         // archived comments are not shown
+                         return comment.state !== 'ARCHIVED' &&
+                             comment.rowStatus !== 'ARCHIVED';
+                       })
+                       .sort(function(a, b) {
+                         return memoTime(a) - memoTime(b);
+                       })
+                       .slice(0, MAX_COMMENT_ITEMS);
+    resolveCreators(comments, function() {
+      replyList(req, comments.map(function(comment) {
+        return {
+          id: comment.name,
+          title: memoTitle(comment),
+          subtitle: commentInfo(comment),
+          flags: 0
+        };
+      }));
+    });
+  });
 }
 
 function handleGet(req) {
@@ -887,24 +955,19 @@ function handleGet(req) {
       replyError(req, err || 'Memo not found');
       return;
     }
-    // the flag decides whether the watch offers "Comments"
-    replyOk(req, {
-      'TEXT': markdownToLines(memo.content || ''),
-      'ITEM_FLAGS': hasComments(memo) ? FLAG_HAS_COMMENTS : 0
-    });
-  });
-}
-
-function handleListComments(req) {
-  apiRequest('GET', req.target + '/comments', null, function(err, data) {
-    if (err) {
-      replyError(req, err);
-      return;
-    }
-    var comments = data.memos || [];
-    replyOk(req, {
-      'TEXT': comments.length > 0 ? joinLines(commentLines(comments)) :
-                                    'p' + translate('No comments yet')
+    // a comment starts with its author and date
+    var parent = memo.parent;
+    resolveCreators(parent ? [memo] : [], function() {
+      var lines = markdownLines(memo.content || '');
+      if (parent) {
+        if (lines.length === 0) lines.push('p' + translate('(empty)'));
+        lines.unshift('m' + commentInfo(memo));
+      }
+      // the flag decides whether the watch offers "Comments"
+      replyOk(req, {
+        'TEXT': joinLines(lines),
+        'ITEM_FLAGS': hasComments(memo) ? FLAG_HAS_COMMENTS : 0
+      });
     });
   });
 }

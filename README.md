@@ -26,7 +26,7 @@ Ostrakon started as a fork of [pebble-memos](https://github.com/erimow/pebble-me
 * **Recent**, **Pinned** and **Tags** lists, 20 memos per page with *Load more*.
 * **Search** by dictating a few words; the results show the search term in the title bar.
 * Memos are shown with their **markdown** rendered: headings, task checkboxes, bullets, quotes, code and tags.
-* **Comments** of a memo can be opened from its menu if it has any.
+* **Comments** of a memo can be opened from its menu if it has any. They are listed with author and time; each comment has its own menu to open, append to, archive or delete it, or to add a new comment.
 * Recently loaded memos are cached on the phone, so lists and memos also open without internet.
 
 **Organizing**

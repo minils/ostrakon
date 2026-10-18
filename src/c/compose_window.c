@@ -248,15 +248,15 @@ static void open_window(void) {
 
 static void delayed_dictation(void *data) { start_dictation(); }
 
-static void push(ComposeMode mode, int draft_index, const char *text,
-                 const char *target, bool dictate) {
+static void push(ComposeMode mode, int draft_index, const char *target,
+                 bool dictate) {
   if (s_window) {
     return;
   }
   s_mode = mode;
   s_draft_index = draft_index;
   s_sending = false;
-  ui_copy_truncated(s_message, text ? text : "", sizeof(s_message));
+  drafts_read(draft_index, s_message, sizeof(s_message));  // empty if -1
   ui_copy_truncated(s_target, target ? target : "", sizeof(s_target));
 
   if (dictate) {
@@ -269,18 +269,16 @@ static void push(ComposeMode mode, int draft_index, const char *text,
   }
 }
 
-void compose_window_push_new(void) {
-  push(ComposeModeMemo, -1, NULL, NULL, true);
-}
+void compose_window_push_new(void) { push(ComposeModeMemo, -1, NULL, true); }
 
 void compose_window_push_draft(int draft_index) {
-  push(ComposeModeMemo, draft_index, drafts_get(draft_index), NULL, false);
+  push(ComposeModeMemo, draft_index, NULL, false);
 }
 
 void compose_window_push_comment(const char *memo_name) {
-  push(ComposeModeComment, -1, NULL, memo_name, true);
+  push(ComposeModeComment, -1, memo_name, true);
 }
 
 void compose_window_push_append(const char *memo_name) {
-  push(ComposeModeAppend, -1, NULL, memo_name, true);
+  push(ComposeModeAppend, -1, memo_name, true);
 }

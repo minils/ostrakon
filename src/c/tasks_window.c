@@ -23,10 +23,8 @@
 
 #define MUTED_COLOR PBL_IF_COLOR_ELSE(GColorDarkGray, GColorBlack)
 
-static RemoteListItem s_items[TASKS_MAX];
+// the items only take memory while the window is open
 static RemoteList s_list = {
-    .items = s_items,
-    .capacity = TASKS_MAX,
     .empty_text = "No tasks",
 };
 static char s_memo_name[COMM_ID_SIZE];
@@ -53,7 +51,7 @@ static void draw_checkbox(GContext *ctx, GRect box, bool done, GColor color) {
 
 static void draw_row(GContext *ctx, const Layer *cell_layer, uint16_t index,
                      void *context) {
-  const RemoteListItem *item = &s_items[index];
+  const RemoteListItem *item = &s_list.items[index];
   GRect bounds = layer_get_bounds(cell_layer);
   bool done = item->flags & TASK_DONE;
   bool highlighted = menu_cell_layer_is_highlighted(cell_layer);
@@ -98,7 +96,7 @@ static void toggle_handler(DictionaryIterator *iter, void *context) {
     return;
   }
 
-  RemoteListItem *item = &s_items[index];
+  RemoteListItem *item = &s_list.items[index];
   if (!iter || comm_response_failed(iter)) {
     // undo the optimistic change
     item->flags ^= TASK_DONE;
@@ -119,7 +117,7 @@ static void select_row(uint16_t index, void *context) {
   }
   remote_list_cancel(&s_list);
 
-  RemoteListItem *item = &s_items[index];
+  RemoteListItem *item = &s_list.items[index];
   // the title lets the phone check that the memo did not change meanwhile
   if (!comm_request(CommActionToggleTask, item->id, item->title, toggle_handler,
                     NULL)) {
@@ -142,6 +140,7 @@ static void unload(void *context) {
     s_changed = true;
   }
   s_list.window = NULL;
+  remote_list_free(&s_list);
 
   // the memo window below still shows the old checkboxes
   if (s_changed) {
@@ -150,7 +149,7 @@ static void unload(void *context) {
 }
 
 void tasks_window_push(const char *memo_name) {
-  if (s_list.window) {
+  if (s_list.window || !remote_list_alloc(&s_list, TASKS_MAX)) {
     return;
   }
   ui_copy_truncated(s_memo_name, memo_name, sizeof(s_memo_name));

@@ -62,7 +62,7 @@ The app speaks English and German. By default it follows the language of the wat
 
 **Watch support**
 
-Built for all current Pebble platforms, including the new Core Devices watches: basalt, chalk, diorite, emery (Pebble Time 2), flint (Pebble 2 Duo) and gabbro (Pebble Round 2).
+Built for all current Pebble platforms, including the new Core Devices watches: basalt, chalk, diorite, emery (Pebble Time 2), flint (Pebble 2 Duo) and gabbro (Pebble Round 2). On watches with a touchscreen, lists and memos can be scrolled by swiping.
 
 ### Spoken keywords
 

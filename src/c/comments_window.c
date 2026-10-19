@@ -2,6 +2,7 @@
 
 #include "i18n.h"
 #include "memo_actions.h"
+#include "memo_window.h"
 #include "remote_list.h"
 #include "ui.h"
 
@@ -18,9 +19,18 @@ static void select_row(uint16_t index, void *context) {
   if (remote_list_is_more_row(&s_list, index)) {
     return;
   }
-  // an action replaces the pending request, so stop loading for good
+  // loading the comment replaces the pending request, so stop for good
   remote_list_cancel(&s_list);
-  memo_actions_open_comment(s_list.items[index].id, s_memo_name, true);
+  memo_window_push_comment(s_list.items[index].id, s_memo_name);
+}
+
+// a long press opens the menu of the comment right from the list
+static void select_long_row(uint16_t index, void *context) {
+  if (remote_list_is_more_row(&s_list, index)) {
+    return;
+  }
+  remote_list_cancel(&s_list);
+  memo_actions_open_comment(s_list.items[index].id, s_memo_name);
 }
 
 static void unload(void *context) {
@@ -42,6 +52,7 @@ void comments_window_push(const char *memo_name) {
           .get_count = remote_list_get_count,
           .get_row = remote_list_get_row,
           .select = select_row,
+          .select_long = select_long_row,
           .unload = unload,
       },
       &s_list);

@@ -210,9 +210,9 @@ static void open_actions(MemoScreen *screen) {
   // an action replaces the pending request; scrolling loads the page again
   stop_loading(screen);
   if (screen->parent[0]) {
-    memo_actions_open_comment(screen->name, screen->parent, false);
+    memo_actions_open_comment(screen->name, screen->parent);
   } else {
-    memo_actions_open(screen->name, false, screen->has_comments);
+    memo_actions_open(screen->name, screen->has_comments);
   }
 }
 

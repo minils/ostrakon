@@ -13,8 +13,7 @@
 #include "ui.h"
 
 enum {
-  MemoActionOpen = 1,
-  MemoActionTasks,
+  MemoActionTasks = 1,
   MemoActionComments,
   MemoActionAppend,
   MemoActionComment,
@@ -76,13 +75,6 @@ static void modify(CommAction action) {
 
 static void action_chosen(int id, void *context) {
   switch (id) {
-    case MemoActionOpen:
-      if (s_parent[0]) {
-        memo_window_push_comment(s_name, s_parent);
-      } else {
-        memo_window_push(s_name);
-      }
-      break;
     case MemoActionTasks:
       tasks_window_push(s_name);
       break;
@@ -112,14 +104,10 @@ static void action_chosen(int id, void *context) {
   }
 }
 
-void memo_actions_open(const char *memo_name, bool include_open,
-                       bool has_comments) {
+void memo_actions_open(const char *memo_name, bool has_comments) {
   // labels are literals, so the items only need to live during this call
   ActionItem items[ACTIONS_MAX_ITEMS];
   int count = 0;
-  if (include_open) {
-    items[count++] = (ActionItem){.label = tr("Open"), .id = MemoActionOpen};
-  }
   items[count++] = (ActionItem){.label = tr("Tasks"), .id = MemoActionTasks};
   if (has_comments) {
     items[count++] =
@@ -141,13 +129,10 @@ void memo_actions_open(const char *memo_name, bool include_open,
   actions_open(items, count, action_chosen, NULL);
 }
 
-void memo_actions_open_comment(const char *comment_name, const char *memo_name,
-                               bool include_open) {
+void memo_actions_open_comment(const char *comment_name,
+                               const char *memo_name) {
   ActionItem items[ACTIONS_MAX_ITEMS];
   int count = 0;
-  if (include_open) {
-    items[count++] = (ActionItem){.label = tr("Open"), .id = MemoActionOpen};
-  }
   items[count++] = (ActionItem){.label = tr("Tasks"), .id = MemoActionTasks};
   items[count++] = (ActionItem){.label = tr("Append"), .id = MemoActionAppend};
   items[count++] =

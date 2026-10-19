@@ -2,6 +2,7 @@
 
 #include "i18n.h"
 #include "memo_actions.h"
+#include "memo_window.h"
 #include "remote_list.h"
 #include "ui.h"
 
@@ -16,9 +17,18 @@ static void select_row(uint16_t index, void *context) {
     remote_list_load_more(&s_list);
     return;
   }
-  // an action replaces the pending request, so stop loading for good
+  // loading the memo replaces the pending request, so stop for good
   remote_list_cancel(&s_list);
-  memo_actions_open(s_list.items[index].id, true,
+  memo_window_push(s_list.items[index].id);
+}
+
+// a long press opens the menu of the memo right from the list
+static void select_long_row(uint16_t index, void *context) {
+  if (remote_list_is_more_row(&s_list, index)) {
+    return;
+  }
+  remote_list_cancel(&s_list);
+  memo_actions_open(s_list.items[index].id,
                     s_list.items[index].flags & MEMO_FLAG_HAS_COMMENTS);
 }
 
@@ -39,6 +49,7 @@ static void push(CommAction action, const char *target, const char *text,
           .get_count = remote_list_get_count,
           .get_row = remote_list_get_row,
           .select = select_row,
+          .select_long = select_long_row,
           .unload = unload,
       },
       &s_list);

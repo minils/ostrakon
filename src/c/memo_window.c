@@ -1,5 +1,6 @@
 #include "memo_window.h"
 
+#include "cache.h"
 #include "comm.h"
 #include "i18n.h"
 #include "memo_actions.h"
@@ -108,6 +109,30 @@ static void page_failed(MemoScreen *screen, bool at_end, const char *error) {
                      screen->more_below);
 }
 
+// Pages are kept in the cache on the watch for when the phone is away
+static void cache_key(const MemoScreen *screen, int page, char *key,
+                      size_t size) {
+  snprintf(key, size, "g%d:%s", page, screen->name);
+}
+
+// Shows a page from the cache; returns false if it has none
+static bool show_cached_page(MemoScreen *screen, int page) {
+  char key[COMM_ID_SIZE + 8];
+  cache_key(screen, page, key, sizeof(key));
+  char *text = malloc(COMM_TEXT_SIZE);
+  int32_t flags = 0;
+  bool found = text && cache_load(key, &flags, text, COMM_TEXT_SIZE);
+  if (found) {
+    if (screen->num_pages == 0) {
+      screen->has_comments = flags & MEMO_FLAG_HAS_COMMENTS;
+      toast_show_quiet(tr("Offline: saved on watch"));
+    }
+    show_page(screen, page, text, flags & MEMO_FLAG_MORE_TEXT);
+  }
+  free(text);
+  return found;
+}
+
 static void content_handler(DictionaryIterator *iter, void *context) {
   MemoScreen *screen = context;
   int page = screen->loading_page;
@@ -115,6 +140,10 @@ static void content_handler(DictionaryIterator *iter, void *context) {
   comm_finish();
   set_loading_page(screen, -1);
 
+  if (!iter && show_cached_page(screen, page)) {
+    memo_view_check_edge(screen->memo_view, page == 0 || at_end);
+    return;
+  }
   if (!iter || comm_response_failed(iter)) {
     const char *error =
         iter ? comm_response_error(iter) : tr("No response from phone");
@@ -126,23 +155,35 @@ static void content_handler(DictionaryIterator *iter, void *context) {
     return;
   }
 
-  Tuple *text = dict_find(iter, MESSAGE_KEY_TEXT);
+  Tuple *tuple = dict_find(iter, MESSAGE_KEY_TEXT);
+  const char *text =
+      tuple && tuple->type == TUPLE_CSTRING ? tuple->value->cstring : "";
   int32_t flags = comm_get_int(iter, MESSAGE_KEY_ITEM_FLAGS, 0);
   if (page == 0) {
     screen->has_comments = flags & MEMO_FLAG_HAS_COMMENTS;
   }
-  show_page(screen, page,
-            text && text->type == TUPLE_CSTRING ? text->value->cstring : "",
-            flags & MEMO_FLAG_MORE_TEXT);
+  char key[COMM_ID_SIZE + 8];
+  cache_key(screen, page, key, sizeof(key));
+  cache_store(key, flags, text, strlen(text));
+  show_page(screen, page, text, flags & MEMO_FLAG_MORE_TEXT);
   // a short page may leave the view close to the edge still
   memo_view_check_edge(screen->memo_view, page == 0 || at_end);
 }
 
-static void load_page(MemoScreen *screen, int page) {
-  set_loading_page(screen, comm_request_page(CommActionGet, screen->name, NULL,
-                                             page, content_handler, screen)
-                               ? page
-                               : -1);
+// Requests a page, or shows it from the cache if the phone is not
+// connected. Returns false if neither works.
+static bool load_page(MemoScreen *screen, int page) {
+  if (comm_request_page(CommActionGet, screen->name, NULL, page,
+                        content_handler, screen)) {
+    set_loading_page(screen, page);
+    return true;
+  }
+  bool at_end = screen->num_pages == 0 || page > screen->first_page;
+  if (!show_cached_page(screen, page)) {
+    return false;
+  }
+  memo_view_check_edge(screen->memo_view, at_end);
+  return true;
 }
 
 static void edge_reached(bool at_end, void *context) {
@@ -156,9 +197,8 @@ static void edge_reached(bool at_end, void *context) {
       return;
     }
   }
-  load_page(screen, at_end ? screen->first_page + screen->num_pages
-                           : screen->first_page - 1);
-  if (screen->loading_page < 0) {
+  if (!load_page(screen, at_end ? screen->first_page + screen->num_pages
+                                : screen->first_page - 1)) {
     page_failed(screen, at_end, tr("Phone not connected"));
   }
 }
@@ -195,8 +235,7 @@ static void comment_click_config_provider(void *context) {
 
 static void load_content(MemoScreen *screen) {
   show_message(screen, "");
-  load_page(screen, 0);
-  if (screen->loading_page < 0) {
+  if (!load_page(screen, 0)) {
     show_message(screen, tr("Phone not connected"));
   }
 }

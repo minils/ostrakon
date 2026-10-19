@@ -60,6 +60,11 @@ bool comm_request_page(CommAction action, const char *target, const char *text,
                        int32_t offset, CommHandler handler, void *context) {
   comm_finish();
 
+  // fail right away instead of waiting for the timeout
+  if (!connection_service_peek_pebble_app_connection()) {
+    return false;
+  }
+
   DictionaryIterator *iter;
   if (app_message_outbox_begin(&iter) != APP_MSG_OK) {
     return false;

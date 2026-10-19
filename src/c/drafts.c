@@ -1,5 +1,6 @@
 #include "drafts.h"
 
+#include "cache.h"
 #include "comm.h"
 #include "ui.h"
 
@@ -15,6 +16,9 @@
 
 // the drafts are read from storage when needed, not kept in memory
 static int s_count;
+
+// what the storage needs for each key besides the value
+#define KEY_OVERHEAD 8
 
 // Storage
 
@@ -102,6 +106,9 @@ int drafts_save(int index, const char *text) {
     }
     index = s_count++;
   }
+  // drafts come first, the cache on the watch only takes the rest
+  cache_make_room(drafts_stored_size() + strlen(text) + 1 +
+                  DRAFT_NUM_CHUNKS * KEY_OVERHEAD);
   if (!write_draft(index, text)) {
     APP_LOG(APP_LOG_LEVEL_ERROR, "Could not persist draft %d", index);
   }
@@ -118,4 +125,17 @@ void drafts_delete(int index) {
     move_stored_draft(i + 1, i);
   }
   s_count--;
+}
+
+size_t drafts_stored_size(void) {
+  size_t size = 0;
+  for (int draft = 0; draft < s_count; draft++) {
+    for (int i = 0; i < (int)DRAFT_NUM_CHUNKS; i++) {
+      int chunk_size = persist_get_size(DRAFT_KEY(draft, i));
+      if (chunk_size > 0) {
+        size += chunk_size + KEY_OVERHEAD;
+      }
+    }
+  }
+  return size;
 }

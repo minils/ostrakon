@@ -15,3 +15,6 @@ void drafts_read(int index, char *buffer, size_t size);
 int drafts_save(int index, const char *text);
 
 void drafts_delete(int index);
+
+// Bytes the stored drafts take in persistent storage
+size_t drafts_stored_size(void);

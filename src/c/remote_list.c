@@ -1,5 +1,6 @@
 #include "remote_list.h"
 
+#include "cache.h"
 #include "i18n.h"
 #include "toast.h"
 #include "ui.h"
@@ -80,12 +81,73 @@ static int32_t unpack_items(RemoteList *list, const char *p, int32_t index) {
   return index;
 }
 
+/* ---------- Cache on the watch ---------- */
+// The first page of a list is kept for when the phone is not connected.
+// Search results are not worth the room.
+
+static bool cache_key(const RemoteList *list, char *key, size_t size) {
+  if (list->action == CommActionSearch) {
+    return false;
+  }
+  snprintf(key, size, "l%d:%s", (int)list->action, list->target);
+  return true;
+}
+
+// Packs the items that fit into an entry, the same way the phone does
+static void store_items(RemoteList *list) {
+  char key[COMM_ID_SIZE + 8];
+  char *data = malloc(CACHE_ENTRY_MAX);
+  if (!data || !cache_key(list, key, sizeof(key))) {
+    free(data);
+    return;
+  }
+  size_t size = 0;
+  for (uint16_t i = 0; i < list->count; i++) {
+    const RemoteListItem *item = &list->items[i];
+    char flags[12];
+    snprintf(flags, sizeof(flags), "%d", (int)item->flags);
+    size_t len = strlen(item->id) + strlen(item->title) +
+                 strlen(item->subtitle) + strlen(flags) + 4;
+    if (size + len > CACHE_ENTRY_MAX) {
+      break;
+    }
+    size += snprintf(data + size, CACHE_ENTRY_MAX - size,
+                     "%s%s\x1f%s\x1f%s\x1f%s", i > 0 ? "\x1e" : "", item->id,
+                     item->title, item->subtitle, flags);
+  }
+  cache_store(key, 0, data, size);
+  free(data);
+}
+
+// Shows the first page from the cache; returns false if it has none
+static bool show_cached_items(RemoteList *list) {
+  char key[COMM_ID_SIZE + 8];
+  char *data = malloc(CACHE_ENTRY_MAX + 1);
+  int32_t flags;
+  bool found = data && cache_key(list, key, sizeof(key)) &&
+               cache_load(key, &flags, data, CACHE_ENTRY_MAX + 1);
+  if (found) {
+    list->count = unpack_items(list, data, 0);
+    list->expected = list->count;
+    list->has_more = false;
+    if (list->count == 0) {
+      list_window_set_status(list->window, tr(list->empty_text));
+    }
+    list_window_reload(list->window);
+    toast_show_quiet(tr("Offline: saved on watch"));
+  }
+  free(data);
+  return found;
+}
+
 static void response_handler(DictionaryIterator *iter, void *context) {
   RemoteList *list = context;
 
   if (!iter) {
     set_loading(list, false);
-    show_error(list, tr("No response from phone"));
+    if (list->page_start > 0 || !show_cached_items(list)) {
+      show_error(list, tr("No response from phone"));
+    }
     return;
   }
   if (comm_response_failed(iter)) {
@@ -107,6 +169,9 @@ static void response_handler(DictionaryIterator *iter, void *context) {
                      end < list->capacity;
     if (list->expected <= list->page_start) {
       finish(list);
+      if (list->page_start == 0) {
+        store_items(list);
+      }
       if (list->count == 0) {
         list_window_set_status(list->window, tr(list->empty_text));
       }
@@ -130,6 +195,9 @@ static void response_handler(DictionaryIterator *iter, void *context) {
   list->count = unpack_items(list, items->value->cstring, index);
   if (list->count >= list->expected) {
     finish(list);
+    if (list->page_start == 0) {
+      store_items(list);
+    }
   }
   list_window_reload(list->window);
 }
@@ -141,7 +209,7 @@ static void request_page(RemoteList *list) {
                         list->action, list->target[0] ? list->target : NULL,
                         list->text[0] ? list->text : NULL, list->page_start,
                         response_handler, list));
-  if (!list->loading) {
+  if (!list->loading && (list->page_start > 0 || !show_cached_items(list))) {
     show_error(list, tr("Phone not connected"));
   }
 }

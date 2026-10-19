@@ -72,6 +72,7 @@ static const Translation GERMAN[] = {
     {"No response from phone", "Keine Antwort vom Handy"},
     {"Phone not connected", "Handy nicht verbunden"},
     {"Request failed", "Anfrage fehlgeschlagen"},
+    {"Offline: saved on watch", "Offline: auf der Uhr gespeichert"},
     // app glance
     {"No open todos", "Keine offenen Aufgaben"},
     {"1 open todo", "1 offene Aufgabe"},

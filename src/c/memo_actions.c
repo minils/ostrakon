@@ -1,6 +1,7 @@
 #include "memo_actions.h"
 
 #include "actions.h"
+#include "cache.h"
 #include "comm.h"
 #include "comments_window.h"
 #include "compose_window.h"
@@ -39,6 +40,9 @@ static void modify_handler(DictionaryIterator *iter, void *context) {
   }
 
   // the memo is gone from the normal list either way
+  char key[COMM_ID_SIZE + 8];
+  snprintf(key, sizeof(key), "g0:%s", s_name);  // see memo_window.c
+  cache_remove(key);
   memo_window_close(s_name);
   memo_list_remove(s_name);
   comments_window_remove(s_name);

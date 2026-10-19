@@ -31,8 +31,7 @@ static const Translation TRANSLATIONS[] = {
       "Dictar palabras a buscar", "Detta le parole da cercare"}},
     {"Drafts", {"Entwürfe", "Brouillons", "Borradores", "Bozze"}},
     {"None saved",
-     {"Keine gespeichert", "Aucun brouillon", "Sin borradores",
-      "Nessuna bozza"}},
+     {"Keine Entwürfe", "Aucun brouillon", "Sin borradores", "Nessuna bozza"}},
     {"%d saved",
      {"%d gespeichert", "%d brouillons", "%d borradores", "%d bozze"}},
     // title bars

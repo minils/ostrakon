@@ -29,6 +29,8 @@ typedef enum {
 
 /* ---------- Flags of memo list items (must match index.js) ---------- */
 #define MEMO_FLAG_HAS_COMMENTS 2
+// the text of a memo continues on the next page (only for CommActionGet)
+#define MEMO_FLAG_MORE_TEXT 4
 
 // Called for every response message of the current request. iter is NULL
 // if the phone could not be reached or did not answer in time.
@@ -47,6 +49,10 @@ bool comm_request_page(CommAction action, const char *target, const char *text,
 
 // Stops delivering responses of the pending request
 void comm_finish(void);
+
+// True while a request with this handler context waits for responses,
+// i.e. it was not finished or replaced by another request
+bool comm_is_pending(void *context);
 
 bool comm_response_failed(DictionaryIterator *iter);
 const char *comm_response_error(DictionaryIterator *iter);

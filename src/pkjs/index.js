@@ -38,6 +38,8 @@ var ACTION_LIST_COMMENTS = 15;
 
 /* ---------- FLAGS OF MEMO LIST ITEMS (MUST MATCH memo_list.c) ---------- */
 var FLAG_HAS_COMMENTS = 2;
+// the text of a memo continues on the next page
+var FLAG_MORE_TEXT = 4;
 
 /* ---------- LIMITS (MUST FIT THE BUFFERS IN comm.h) ---------- */
 var MAX_ID_BYTES = 47;
@@ -47,13 +49,17 @@ var MAX_TEXT_BYTES = 1500;
 var MAX_LIST_ITEMS = 20;
 var MAX_TAG_ITEMS = 30;
 var MAX_TASK_ITEMS = 30;
+// a memo is sent in pages; must match MAX_PAGE_BLOCKS in memo_view.c
+var MAX_PAGE_LINES = 60;
+// longer lines are split, so a page always has room for one
+var MAX_LINE_BYTES = 1000;
 
 var CACHE_KEY = 'ostrakon_cache';
 var QUEUE_KEY = 'ostrakon_queue';
 var DEFAULT_TODO_TAG = 'todo';
 var MAX_CACHED_MEMOS = 200;
-// the watch shows at most MAX_TEXT_BYTES, so more is not worth caching
-var MAX_CACHED_CONTENT = 2000;
+// long memos are shown page by page, so offline they can be read further
+var MAX_CACHED_CONTENT = 8000;
 // list items are packed into messages of up to this many bytes
 var MAX_BATCH_BYTES = 1200;
 // the glance update waits, so it does not slow down the first list
@@ -290,14 +296,47 @@ function markdownLines(content) {
   return lines;
 }
 
-// Joins typed lines into the text sent to the watch
-function joinLines(lines) {
-  if (lines.length === 0) lines = ['p' + translate('(empty)')];
-  return truncateUtf8(lines.join('\n'), MAX_TEXT_BYTES);
+// Splits a typed line longer than maxBytes, at a space where possible.
+// Continued list items and headings go on as paragraphs.
+function splitLine(line, maxBytes) {
+  var pieces = [];
+  var type = line.charAt(0);
+  var rest = line.substring(1);
+  while (utf8Length(rest) > maxBytes - 1) {
+    var piece = truncateUtf8(rest, maxBytes - 1);
+    var space = piece.lastIndexOf(' ');
+    if (space > piece.length / 2) piece = piece.substring(0, space);
+    pieces.push(type + piece);
+    rest = rest.substring(piece.length).replace(/^\s+/, '');
+    if ('pqktm'.indexOf(type) < 0) type = 'p';
+  }
+  pieces.push(type + rest);
+  return pieces;
 }
 
-function markdownToLines(content) {
-  return joinLines(markdownLines(content));
+// Joins typed lines into the pages sent to the watch, each with at most
+// MAX_TEXT_BYTES and MAX_PAGE_LINES lines
+function pageLines(lines) {
+  if (lines.length === 0) lines = ['p' + translate('(empty)')];
+  var pages = [];
+  var page = [];
+  var bytes = 0;
+  lines.forEach(function(line) {
+    splitLine(line, MAX_LINE_BYTES).forEach(function(piece) {
+      var size = utf8Length(piece) + 1;  // with the line break
+      if (page.length > 0 &&
+          (bytes + size > MAX_TEXT_BYTES + 1 ||
+           page.length >= MAX_PAGE_LINES)) {
+        pages.push(page.join('\n'));
+        page = [];
+        bytes = 0;
+      }
+      page.push(piece);
+      bytes += size;
+    });
+  });
+  pages.push(page.join('\n'));
+  return pages;
 }
 
 /* =========================================================
@@ -975,10 +1014,14 @@ function handleGet(req) {
         if (lines.length === 0) lines.push('p' + translate('(empty)'));
         lines.unshift('m' + commentInfo(memo));
       }
+      // the watch asks for the next page when it is scrolled to the end
+      var pages = pageLines(lines);
+      var page = req.offset || 0;
       // the flag decides whether the watch offers "Comments"
       replyOk(req, {
-        'TEXT': joinLines(lines),
-        'ITEM_FLAGS': hasComments(memo) ? FLAG_HAS_COMMENTS : 0
+        'TEXT': pages[page] || '',
+        'ITEM_FLAGS': (hasComments(memo) ? FLAG_HAS_COMMENTS : 0) |
+            (page + 1 < pages.length ? FLAG_MORE_TEXT : 0)
       });
     });
   });

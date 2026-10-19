@@ -2,11 +2,19 @@
 
 #include "ui.h"
 
-#define MAX_BLOCKS 80
+// two pages of lines; must match MAX_PAGE_LINES in index.js
+#define MAX_PAGE_BLOCKS 60
+#define MAX_BLOCKS (2 * MAX_PAGE_BLOCKS)
 #define MAX_TEXT_HEIGHT 2000
 #define BLOCK_SPACING 4
 #define RULE_HEIGHT 9
 #define BOTTOM_PADDING 10
+// room for the loading dots where more lines can be loaded
+#if PBL_DISPLAY_WIDTH >= 200
+#define EDGE_HEIGHT 36
+#else
+#define EDGE_HEIGHT 30
+#endif
 
 typedef enum {
   BlockHeading1,
@@ -32,8 +40,16 @@ typedef struct {
 struct MemoView {
   ScrollLayer *scroll_layer;
   Layer *content_layer;
+  MemoViewEdgeHandler edge_handler;
+  void *context;
   Block blocks[MAX_BLOCKS];
   int num_blocks;
+  bool more_above;
+  bool more_below;
+  bool relayout;     // the offset changes, but not by scrolling
+  int16_t last_top;  // to tell the direction of scrolling
+  AppTimer *loading_timer;
+  int loading_frame;
 };
 
 // Style
@@ -137,10 +153,15 @@ static int16_t text_height(const char *text, GFont font, int16_t width) {
       .h;
 }
 
-static void layout(MemoView *view) {
+// Lays out the blocks. The block at anchor keeps its place on screen if
+// it was at anchor_y before; with anchor -1 the view scrolls to the top.
+static void layout(MemoView *view, int anchor, int16_t anchor_y) {
   GRect bounds = layer_get_bounds(scroll_layer_get_layer(view->scroll_layer));
   int16_t width = layer_get_bounds(view->content_layer).size.w;
   int16_t y = PBL_IF_ROUND_ELSE(bounds.size.h / 10, 2);
+  if (view->more_above) {
+    y += EDGE_HEIGHT;
+  }
 
   for (int i = 0; i < view->num_blocks; i++) {
     Block *block = &view->blocks[i];
@@ -158,18 +179,36 @@ static void layout(MemoView *view) {
     y += block->height + BLOCK_SPACING;
   }
 
-  int16_t content_height = y + BOTTOM_PADDING;
+  int16_t content_height =
+      y + (view->more_below ? EDGE_HEIGHT : 0) + BOTTOM_PADDING;
   if (content_height < bounds.size.h) {
     content_height = bounds.size.h;
   }
 
+  GPoint offset = GPointZero;
+  if (anchor >= 0 && anchor < view->num_blocks) {
+    offset = scroll_layer_get_content_offset(view->scroll_layer);
+    offset.y -= view->blocks[anchor].y - anchor_y;
+    int16_t min_y = bounds.size.h - content_height;
+    offset.y = offset.y > 0 ? 0 : (offset.y < min_y ? min_y : offset.y);
+  }
+
+  view->relayout = true;
   GRect frame = layer_get_frame(view->content_layer);
   frame.size.h = content_height;
   layer_set_frame(view->content_layer, frame);
   scroll_layer_set_content_size(view->scroll_layer,
                                 GSize(bounds.size.w, content_height));
-  scroll_layer_set_content_offset(view->scroll_layer, GPointZero, false);
+  scroll_layer_set_content_offset(view->scroll_layer, offset, false);
+  view->relayout = false;
+  view->last_top = -scroll_layer_get_content_offset(view->scroll_layer).y;
   layer_mark_dirty(view->content_layer);
+}
+
+// Lays out the blocks without moving the ones on screen, which start at
+// first after the change and were at old_y before it
+static void layout_keeping(MemoView *view, int first, int16_t old_y) {
+  layout(view, view->num_blocks > 0 ? first : -1, old_y);
 }
 
 // Drawing
@@ -238,9 +277,23 @@ static void draw_block(GContext *ctx, const Block *block, int16_t width) {
                      GTextOverflowModeWordWrap, GTextAlignmentLeft, NULL);
 }
 
+static void draw_edge_dots(GContext *ctx, const MemoView *view, int16_t y,
+                           int16_t width) {
+  ui_draw_loading_dots(ctx, GPoint(width / 2, y + EDGE_HEIGHT / 2),
+                       view->loading_frame, false);
+}
+
 static void content_update(Layer *layer, GContext *ctx) {
   MemoView *view = *(MemoView **)layer_get_data(layer);
   int16_t width = layer_get_bounds(layer).size.w;
+
+  if (view->more_above && view->num_blocks > 0) {
+    draw_edge_dots(ctx, view, view->blocks[0].y - EDGE_HEIGHT, width);
+  }
+  if (view->more_below && view->num_blocks > 0) {
+    const Block *last = &view->blocks[view->num_blocks - 1];
+    draw_edge_dots(ctx, view, last->y + last->height + BLOCK_SPACING, width);
+  }
 
   // only draw what is currently scrolled into view
   int16_t top = -scroll_layer_get_content_offset(view->scroll_layer).y;
@@ -258,18 +311,81 @@ static void content_update(Layer *layer, GContext *ctx) {
   }
 }
 
+// Loading more lines
+
+// More lines are loaded while there is still a screen of text to read.
+// Only the edge the view is scrolled towards counts, so loading at one
+// edge never makes the other one load right away.
+void memo_view_check_edge(MemoView *view, bool at_end) {
+  if (!view->edge_handler || view->num_blocks == 0) {
+    return;
+  }
+  int16_t height =
+      layer_get_bounds(scroll_layer_get_layer(view->scroll_layer)).size.h;
+  int16_t top = -scroll_layer_get_content_offset(view->scroll_layer).y;
+  int16_t content_height = scroll_layer_get_content_size(view->scroll_layer).h;
+  if (at_end ? view->more_below && top + 2 * height >= content_height
+             : view->more_above && top <= height) {
+    view->edge_handler(at_end, view->context);
+  }
+}
+
+static void offset_changed(ScrollLayer *scroll_layer, void *context) {
+  MemoView *view = context;
+  int16_t top = -scroll_layer_get_content_offset(scroll_layer).y;
+  if (view->relayout || top == view->last_top) {
+    return;
+  }
+  bool down = top > view->last_top;
+  view->last_top = top;
+  memo_view_check_edge(view, down);
+}
+
+static void loading_tick(void *context) {
+  MemoView *view = context;
+  view->loading_frame++;
+  layer_mark_dirty(view->content_layer);
+  view->loading_timer =
+      app_timer_register(UI_LOADING_FRAME_MS, loading_tick, view);
+}
+
+void memo_view_set_loading(MemoView *view, bool loading) {
+  if (loading && !view->loading_timer) {
+    view->loading_timer =
+        app_timer_register(UI_LOADING_FRAME_MS, loading_tick, view);
+  } else if (!loading && view->loading_timer) {
+    app_timer_cancel(view->loading_timer);
+    view->loading_timer = NULL;
+  }
+}
+
+void memo_view_set_more(MemoView *view, bool above, bool below) {
+  if (view->more_above == above && view->more_below == below) {
+    return;
+  }
+  int16_t old_y = view->num_blocks > 0 ? view->blocks[0].y : 0;
+  view->more_above = above;
+  view->more_below = below;
+  layout_keeping(view, 0, old_y);
+}
+
 // Public api
 
 MemoView *memo_view_create(Layer *parent, GRect frame,
                            ClickConfigProvider click_config_provider,
-                           Window *window) {
+                           Window *window, MemoViewEdgeHandler edge_handler,
+                           void *context) {
   MemoView *view = calloc(1, sizeof(MemoView));
+  view->edge_handler = edge_handler;
+  view->context = context;
 
   view->scroll_layer = scroll_layer_create(frame);
-  scroll_layer_set_callbacks(view->scroll_layer,
-                             (ScrollLayerCallbacks){
-                                 .click_config_provider = click_config_provider,
-                             });
+  scroll_layer_set_context(view->scroll_layer, view);
+  scroll_layer_set_callbacks(
+      view->scroll_layer, (ScrollLayerCallbacks){
+                              .click_config_provider = click_config_provider,
+                              .content_offset_changed_handler = offset_changed,
+                          });
   scroll_layer_set_click_config_onto_window(view->scroll_layer, window);
 
   // keep text away from the curved edges on round displays and clear of
@@ -288,15 +404,21 @@ MemoView *memo_view_create(Layer *parent, GRect frame,
 }
 
 void memo_view_destroy(MemoView *view) {
+  memo_view_set_loading(view, false);
   layer_destroy(view->content_layer);
   scroll_layer_destroy(view->scroll_layer);
   free(view);
 }
 
-void memo_view_set_lines(MemoView *view, char *lines) {
-  view->num_blocks = 0;
+// Reads the lines into blocks after the existing ones; returns how many
+static int parse_lines(MemoView *view, char *lines) {
+  int start = view->num_blocks;
+  int limit = start + MAX_PAGE_BLOCKS;
+  if (limit > MAX_BLOCKS) {
+    limit = MAX_BLOCKS;
+  }
   char *line = lines;
-  while (line && *line && view->num_blocks < MAX_BLOCKS) {
+  while (line && *line && view->num_blocks < limit) {
     char *end = strchr(line, '\n');
     if (end) {
       *end = '\0';
@@ -306,12 +428,63 @@ void memo_view_set_lines(MemoView *view, char *lines) {
     block->text = line + 1;
     line = end ? end + 1 : NULL;
   }
-  layout(view);
+  return view->num_blocks - start;
+}
+
+static void reverse_blocks(Block *blocks, int count) {
+  for (int i = 0; i < count / 2; i++) {
+    Block swap = blocks[i];
+    blocks[i] = blocks[count - 1 - i];
+    blocks[count - 1 - i] = swap;
+  }
+}
+
+int memo_view_set_lines(MemoView *view, char *lines) {
+  view->num_blocks = 0;
+  view->more_above = view->more_below = false;
+  int count = parse_lines(view, lines);
+  layout(view, -1, 0);
+  return count;
+}
+
+int memo_view_add_lines(MemoView *view, char *lines, bool at_end) {
+  int old_count = view->num_blocks;
+  int16_t old_y = old_count > 0 ? view->blocks[0].y : 0;
+  int added = parse_lines(view, lines);
+  if (!at_end) {
+    // rotate the new blocks to the front
+    reverse_blocks(view->blocks, view->num_blocks);
+    reverse_blocks(view->blocks, added);
+    reverse_blocks(view->blocks + added, old_count);
+  }
+  if (old_count == 0) {
+    layout(view, -1, 0);
+  } else {
+    layout_keeping(view, at_end ? 0 : added, old_y);
+  }
+  return added;
+}
+
+void memo_view_remove_blocks(MemoView *view, int count, bool at_end) {
+  if (count > view->num_blocks) {
+    count = view->num_blocks;
+  }
+  int16_t old_y = 0;
+  if (at_end) {
+    old_y = view->num_blocks > 0 ? view->blocks[0].y : 0;
+  } else {
+    old_y = count < view->num_blocks ? view->blocks[count].y : 0;
+    memmove(view->blocks, view->blocks + count,
+            (view->num_blocks - count) * sizeof(Block));
+  }
+  view->num_blocks -= count;
+  layout_keeping(view, 0, old_y);
 }
 
 void memo_view_set_message(MemoView *view, const char *message) {
   view->num_blocks = 1;
+  view->more_above = view->more_below = false;
   view->blocks[0].type = BlockParagraph;
   view->blocks[0].text = message;
-  layout(view);
+  layout(view, -1, 0);
 }

@@ -22,6 +22,10 @@ void comm_finish(void) {
   }
 }
 
+bool comm_is_pending(void *context) {
+  return s_handler && s_context == context;
+}
+
 static void fail_pending(void) {
   CommHandler handler = s_handler;
   void *context = s_context;

@@ -100,6 +100,12 @@ static void init(void) {
   comm_init();
   drafts_init();
 
+#if PBL_API_EXISTS(app_touch_navigation_enable)
+  // apps are left out of touch navigation unless they opt in; with it,
+  // swipes scroll the lists and memos on watches with a touchscreen
+  app_touch_navigation_enable(true);
+#endif
+
   s_main_window = list_window_create(
       (ListWindowCallbacks){
           .get_count = get_count,

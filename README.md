@@ -61,7 +61,7 @@ Ostrakon started as a fork of [pebble-memos](https://github.com/erimow/pebble-me
 
 **Languages**
 
-The app speaks English and German. By default it follows the language of the watch; the language can also be chosen in the settings.
+The app speaks English, German, French, Spanish and Italian. By default it follows the language of the watch; the language can also be chosen in the settings.
 
 **Watch support**
 
@@ -71,12 +71,16 @@ Built for all current Pebble platforms, including the new Core Devices watches: 
 
 Some spoken phrases are turned into markdown when a memo is sent:
 
-| Say (English) | Say (German) | Result |
-| --- | --- | --- |
-| checkbox, check box | Checkbox, Kontrollkästchen | a task, `- [ ] ` |
-| title big / medium / small | Überschrift (or Titel) groß / mittel / klein | a heading, `#`, `##` or `###` |
-| new line | neue Zeile | a line break |
-| hashtag *word* | Hashtag *Wort* | the tag `#word` |
+| Result | English | German | French | Spanish | Italian |
+| --- | --- | --- | --- | --- | --- |
+| a task, `- [ ] ` | checkbox, check box | Checkbox, Kontrollkästchen | case à cocher | casilla de verificación | casella di controllo |
+| a heading, `#` | title big | Überschrift (or Titel) groß | grand titre, titre grand | título grande | titolo grande |
+| a heading, `##` | title medium | Überschrift (or Titel) mittel | titre moyen | título mediano | titolo medio |
+| a heading, `###` | title small | Überschrift (or Titel) klein | petit titre, titre petit | título pequeño | titolo piccolo |
+| a line break | new line | neue Zeile | nouvelle ligne | nueva línea | nuova riga |
+| the tag `#word` | hashtag *word* | Hashtag *Wort* | hashtag *mot* | hashtag *palabra* | hashtag *parola* |
+
+The keywords of all languages work whatever the language setting.
 
 ### Settings
 
@@ -88,7 +92,7 @@ Open the app settings in the Pebble app on your phone:
 * **Default Tags** added to every new memo, e.g. `#pebble`
 * **To-do Tag** whose open tasks the app glance counts, `#todo` by default
 * **Vibrate** on success and errors
-* **Language**: automatic (the watch language), English or Deutsch
+* **Language**: automatic (the watch language), English, Deutsch, Français, Español or Italiano
 
 ### Development
 
@@ -96,6 +100,7 @@ The app has two parts: the watch app in C (`src/c`) and the phone part in Pebble
 
 * Build with the [Pebble SDK](https://developer.repebble.com): `pebble build`
 * Run the phone-side tests against a mock Memos server: `node test/pkjs.test.js`
+* Translations: the watch texts are in `resources/lang/*.txt` (one file per language, loaded only for the language in use), the phone texts and the settings page in `src/pkjs/i18n.js`. Check the watch translations with `node test/i18n.test.js`.
 * Sources are formatted with `clang-format` in Google style (see `.clang-format`); CI checks this
 * The settings page is built with [Clay](https://github.com/pebble/clay) (MIT license), included in `src/pkjs/vendor`
 * GitHub Actions runs the tests and builds the app on every push; the `.pbw` can be downloaded from the run's artifacts and installed from the phone.

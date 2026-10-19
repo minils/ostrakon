@@ -73,7 +73,8 @@ var TIMEOUT_MS = 15000;
  * Language
  * ========================================================= */
 
-// "en" or "de", from the language setting or the watch language
+// "en", "de", "fr", "es" or "it", from the language setting or the watch
+// language
 function currentLanguage() {
   return i18n.effectiveLanguage((getSettings() || {}).language);
 }
@@ -134,16 +135,41 @@ function compareText(a, b) {
  * Memo parser
  * ========================================================= */
 
-// Spoken phrases and the markdown they stand for, in English and German
+// Spoken phrases and the markdown they stand for, in English, German,
+// French, Spanish and Italian
 var SPOKEN_MARKDOWN = [
-  {phrases: ['check box', 'checkbox', 'kontrollkästchen'], markdown: '- [ ] '},
-  {phrases: ['new line', 'neue zeile'], markdown: '\n'},
-  {phrases: ['title big', 'überschrift groß', 'titel groß'], markdown: '# '}, {
-    phrases: ['title medium', 'überschrift mittel', 'titel mittel'],
+  {
+    phrases: [
+      'check box', 'checkbox', 'kontrollkästchen', 'case à cocher',
+      'casilla de verificación', 'casella di controllo'
+    ],
+    markdown: '- [ ] '
+  },
+  {
+    phrases: [
+      'new line', 'neue zeile', 'nouvelle ligne', 'nueva línea', 'nuova riga'
+    ],
+    markdown: '\n'
+  },
+  {
+    phrases: [
+      'title big', 'überschrift groß', 'titel groß', 'grand titre',
+      'titre grand', 'título grande', 'titolo grande'
+    ],
+    markdown: '# '
+  },
+  {
+    phrases: [
+      'title medium', 'überschrift mittel', 'titel mittel', 'titre moyen',
+      'título mediano', 'titolo medio'
+    ],
     markdown: '## '
   },
   {
-    phrases: ['title small', 'überschrift klein', 'titel klein'],
+    phrases: [
+      'title small', 'überschrift klein', 'titel klein', 'petit titre',
+      'titre petit', 'título pequeño', 'titolo piccolo'
+    ],
     markdown: '### '
   }
 ];

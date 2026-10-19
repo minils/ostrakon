@@ -1,0 +1,78 @@
+# French texts of the watch app, loaded as a resource when the watch
+# shows French. Each line is the English text as written in tr("...") in
+# src/c, " = " and the translation; \n is a line break. Lines starting
+# with # are comments. A missing line shows the English text.
+
+# main menu
+New = Nouveau
+Dictate a memo = Dicter un mémo
+Recent = Récents
+Latest memos = Derniers mémos
+Pinned = Épinglés
+Pinned memos = Mémos épinglés
+Tags = Tags
+Memos by tag = Mémos par tag
+Search = Recherche
+Dictate words to find = Dicter la recherche
+Drafts = Brouillons
+None saved = Aucun brouillon
+%d saved = Brouillons : %d
+
+# title bars
+Draft = Brouillon
+Comment = Commentaire
+Append = Ajouter
+Memo = Mémo
+Comments = Commentaires
+
+# actions
+Send = Envoyer
+Dictate more = Dicter la suite
+Discard = Abandonner
+Yes, discard = Oui, abandonner
+Open = Ouvrir
+Tasks = Tâches
+New comment = Nouveau commentaire
+Pin / Unpin = Épingler / Désépingler
+Archive = Archiver
+Delete = Supprimer
+Yes, delete = Oui, supprimer
+Cancel = Annuler
+
+# results
+Archived = Archivé
+Deleted = Supprimé
+Sent = Envoyé
+Comment added = Commentaire ajouté
+Appended = Ajouté
+Comment discarded = Commentaire abandonné
+Append discarded = Ajout abandonné
+Saved as draft = Enregistré en brouillon
+Draft deleted = Brouillon supprimé
+Drafts full.\nSend or discard. = Brouillons pleins.\nEnvoyez ou abandonnez.
+Phone unreachable.\nSaved as draft. = Téléphone injoignable.\nEnregistré en brouillon.
+Nothing to send = Rien à envoyer
+Sending... = Envoi...
+Dictation Failed = Échec de la dictée
+Memo too long = Mémo trop long
+
+# lists
+Load more = Charger plus
+No drafts = Aucun brouillon
+No matches = Aucun résultat
+No memos = Aucun mémo
+No pinned memos = Aucun mémo épinglé
+No tags = Aucun tag
+No tasks = Aucune tâche
+No comments yet = Pas encore de commentaires
+
+# connection
+No response from phone = Pas de réponse du téléphone
+Phone not connected = Téléphone non connecté
+Request failed = Échec de la requête
+Offline: saved on watch = Hors ligne : enregistré sur la montre
+
+# app glance
+No open todos = Aucune tâche ouverte
+1 open todo = 1 tâche ouverte
+%d open todos = %d tâches ouvertes

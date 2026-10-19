@@ -53,6 +53,14 @@ static void get_row(uint16_t index, const char **title, const char **subtitle,
       break;
     case MainRowDrafts:
       *title = tr("Drafts");
+      // formatted on every draw, so it follows a change of the language
+      if (drafts_count() == 0) {
+        snprintf(s_drafts_subtitle, sizeof(s_drafts_subtitle), "%s",
+                 tr("None saved"));
+      } else {
+        snprintf(s_drafts_subtitle, sizeof(s_drafts_subtitle), tr("%d saved"),
+                 drafts_count());
+      }
       *subtitle = s_drafts_subtitle;
       break;
   }
@@ -81,17 +89,6 @@ static void select_row(uint16_t index, void *context) {
   }
 }
 
-static void appear(void *context) {
-  int count = drafts_count();
-  if (count == 0) {
-    snprintf(s_drafts_subtitle, sizeof(s_drafts_subtitle), "%s",
-             tr("None saved"));
-  } else {
-    snprintf(s_drafts_subtitle, sizeof(s_drafts_subtitle), tr("%d saved"),
-             count);
-  }
-}
-
 // App lifecycle
 
 static void init(void) {
@@ -111,7 +108,6 @@ static void init(void) {
           .get_count = get_count,
           .get_row = get_row,
           .select = select_row,
-          .appear = appear,
       },
       NULL);
   list_window_push(s_main_window);

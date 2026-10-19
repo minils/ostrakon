@@ -233,6 +233,8 @@ function clayResponse(s) {
     SETTING_TOKEN: {value: s.token},
     SETTING_TAGS: {value: s.tags || ''},
     SETTING_TODO_TAG: {value: s.todoTag || ''},
+    // the rows of own keywords come as JSON
+    SETTING_KEYWORDS: {value: JSON.stringify(s.keywords || [])},
     VIBRATE: {value: s.vibrate !== false},
     SETTING_LANGUAGE: {value: s.language || 'auto'}
   }));
@@ -672,6 +674,7 @@ setTimeout(() => {
     token: 'tok',
     tags: '',
     todoTag: '#home',
+    keywords: [],
     vibrate: true,
     language: 'auto'
   });
@@ -767,6 +770,39 @@ setTimeout(() => {
         openedUrls.pop().replace(/^data:text\/html;charset=utf-8,/, ''));
     assert.ok(page.includes(l.page), l.language);
   }
+
+  // own keywords from the settings: whole words only, before the built-in
+  // ones, which they can replace; "\\n" is a line break. Empty rows are
+  // dropped.
+  const keywords = [
+    {word: 'Zitat', markdown: '>'}, {word: ' Code ', markdown: '\\n```\\n'},
+    {word: 'neue Zeile', markdown: '\\n\\n'}, {word: 'a.b', markdown: '(x)'},
+    {word: 'kaputt', markdown: ''}, {word: '', markdown: '#'}
+  ];
+  listeners.webviewclosed({response: clayResponse({...good, keywords})});
+  await new Promise(res => setTimeout(res, 100));
+  assert.deepStrictEqual(JSON.parse(store.ostrakon_settings).keywords, [
+    {word: 'Zitat', markdown: '>'}, {word: 'Code', markdown: '\\n```\\n'},
+    {word: 'neue Zeile', markdown: '\\n\\n'}, {word: 'a.b', markdown: '(x)'}
+  ]);
+  r = await request(
+      1, null,
+      'Zitat, Sein oder nicht sein neue Zeile code let x CODE. Barcode ' +
+          'axb a.b Checkbox Milch');
+  assert.strictEqual(r[0].STATUS, 0);
+  assert.strictEqual(
+      created[created.length - 1].content,
+      '> Sein oder nicht sein\n\n\n```\nlet x\n```\nBarcode axb (x) ' +
+          '- [ ] Milch\n\n#pebble');
+  r = await request(8, 'memos/m4', 'Zitat Zitat gut');
+  assert.strictEqual(r[0].STATUS, 0);
+  assert.deepStrictEqual(
+      comments[comments.length - 1], ['memos/m4', {content: '> > gut'}]);
+  r = await request(8, 'memos/m4', 'Zitat');
+  assert.deepStrictEqual([r[0].STATUS, r[0].TEXT], [1, 'Comment is empty']);
+  listeners.showConfiguration({});
+  // the English page has no "neue Zeile" of its own
+  assert.ok(decodeURIComponent(openedUrls.pop()).includes('neue Zeile'));
 
   store.ostrakon_settings = JSON.stringify({...good, language: 'auto'});
   const watchInfo = Pebble.getActiveWatchInfo;

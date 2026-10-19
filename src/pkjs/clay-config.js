@@ -45,6 +45,14 @@ module.exports = function(t) {
           'description': t.todoTagHint,
           'defaultValue': '#todo',
           'attributes': {'placeholder': '#todo'}
+        },
+        {
+          'type': 'input',
+          'messageKey': 'SETTING_KEYWORDS',
+          'label': t.keywords,
+          'description': t.keywordsHint,
+          // holds the rows of clay-custom.js as JSON, hidden there
+          'id': 'keywords'
         }
       ]
     },

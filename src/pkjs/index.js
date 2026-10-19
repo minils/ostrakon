@@ -182,10 +182,42 @@ var SPOKEN_MARKDOWN_PATTERNS = SPOKEN_MARKDOWN.map(function(entry) {
   };
 });
 
+// Own keywords from the settings, a list of {word, markdown}, e.g. "quote"
+// and "> ". "\n" in the markdown is a line break. They only match whole
+// words, so a short one like "code" leaves "barcode" alone, and they are
+// applied before the built-in ones, which they can replace.
+function customKeywordPatterns(keywords) {
+  var patterns = [];
+  cleanKeywords(keywords).forEach(function(keyword) {
+    var phrase = keyword.word;
+    var markdown = keyword.markdown.replace(/\\n/g, '\n');
+    // like the built-in prefixes, the markdown is followed by a space
+    if (markdown.slice(-1) !== '\n') markdown += ' ';
+    var words = phrase.split(/\s+/).map(function(word) {
+      return word.replace(/[.*+?^${}()|[\]\\\/]/g, '\\$&');
+    });
+    // what follows is dropped like after the built-in phrases, but not a
+    // line break an earlier keyword made
+    patterns.push({
+      regex: new RegExp(
+          '(?:' + words.join('\\s+') + ')(?=[\\s,.!?;:]|$)[ \\t,.]*', 'gi'),
+      markdown: markdown
+    });
+  });
+  return patterns;
+}
+
 function applyKeywords(text) {
-  var content = SPOKEN_MARKDOWN_PATTERNS.reduce(function(result, pattern) {
-    return result.replace(pattern.regex, pattern.markdown);
+  var custom = customKeywordPatterns((getSettings() || {}).keywords);
+  var content = custom.reduce(function(result, pattern) {
+    return result.replace(pattern.regex, function(phrase, offset, all) {
+      var before = offset > 0 ? all.charAt(offset - 1) : ' ';
+      return /[\s,.!?;:]/.test(before) ? pattern.markdown : phrase;
+    });
   }, text);
+  content = SPOKEN_MARKDOWN_PATTERNS.reduce(function(result, pattern) {
+    return result.replace(pattern.regex, pattern.markdown);
+  }, content);
   return content.replace(/[ \t]+\n/g, '\n');
 }
 
@@ -204,7 +236,7 @@ function takeSpokenTags(text) {
 function parseMemo(text, defaultTags) {
   var spoken = takeSpokenTags(applyKeywords(text));
   // only markdown leftovers (e.g. a lone checkbox) count as empty, too
-  if (spoken.text.replace(/[-#\[\]\s]/g, '') === '') return null;
+  if (isBlankMarkdown(spoken.text)) return null;
   return spoken.text + '\n\n' + defaultTags.concat(spoken.tags).join(' ');
 }
 
@@ -423,7 +455,7 @@ function appendToContent(content, text) {
 }
 
 function isBlankMarkdown(text) {
-  return text.replace(/[-#\[\]\s]/g, '') === '';
+  return text.replace(/[-#>`\[\]\s]/g, '') === '';
 }
 
 /* =========================================================
@@ -1320,6 +1352,29 @@ function clayValue(settings, key) {
   return item !== null && typeof item === 'object' ? item.value : item;
 }
 
+// Own keywords without empty rows, as the settings store them
+function cleanKeywords(keywords) {
+  return (Array.isArray(keywords) ? keywords : [])
+      .map(function(keyword) {
+        return {
+          word: String((keyword && keyword.word) || '').trim(),
+          markdown: String((keyword && keyword.markdown) || '').trim()
+        };
+      })
+      .filter(function(keyword) {
+        return keyword.word !== '' && keyword.markdown !== '';
+      });
+}
+
+// The settings page keeps the rows of own keywords as JSON in one field
+function parseKeywords(value) {
+  try {
+    return cleanKeywords(JSON.parse(value || '[]'));
+  } catch (e) {
+    return [];
+  }
+}
+
 Pebble.addEventListener('showConfiguration', function() {
   console.log('Ostrakon: Opening config page');
   var current = getSettings() || {};
@@ -1329,6 +1384,7 @@ Pebble.addEventListener('showConfiguration', function() {
     'SETTING_TAGS': current.tags !== undefined ? current.tags :
                                                  DEFAULT_TAGS.join(' '),
     'SETTING_TODO_TAG': current.todoTag || '#' + DEFAULT_TODO_TAG,
+    'SETTING_KEYWORDS': JSON.stringify(cleanKeywords(current.keywords)),
     'VIBRATE': current.vibrate !== false,
     'SETTING_LANGUAGE': i18n.settingValue(current.language)
   });
@@ -1345,6 +1401,7 @@ Pebble.addEventListener('webviewclosed', function(e) {
       token: String(clayValue(values, 'SETTING_TOKEN') || '').trim(),
       tags: String(clayValue(values, 'SETTING_TAGS') || '').trim(),
       todoTag: String(clayValue(values, 'SETTING_TODO_TAG') || '').trim(),
+      keywords: parseKeywords(clayValue(values, 'SETTING_KEYWORDS')),
       vibrate: !!clayValue(values, 'VIBRATE'),
       language: i18n.settingValue(clayValue(values, 'SETTING_LANGUAGE'))
     };

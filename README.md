@@ -82,6 +82,8 @@ Some spoken phrases are turned into markdown when a memo is sent:
 
 The keywords of all languages work whatever the language setting.
 
+**Own keywords** can be added in the settings, one row of spoken word and markdown each; rows are added with **+** and removed with **−**. `\n` in the markdown is a line break. For example *quote* with `>` turns "quote" into a quote, and *code* with `\n```\n` starts or ends a code block. Own keywords only match whole words (so "code" leaves "barcode" alone), are not case-sensitive and are applied before the built-in ones, so they can also replace them.
+
 ### Settings
 
 Open the app settings in the Pebble app on your phone:
@@ -91,6 +93,7 @@ Open the app settings in the Pebble app on your phone:
 * **Test connection** checks URL and token. After saving, the watch also shows whether the connection works.
 * **Default Tags** added to every new memo, e.g. `#pebble`
 * **To-do Tag** whose open tasks the app glance counts, `#todo` by default
+* **Own Keywords**: your own spoken words for markdown, see *Spoken keywords*
 * **Vibrate** on success and errors
 * **Language**: automatic (the watch language), English, Deutsch, Français, Español or Italiano
 

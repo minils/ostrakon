@@ -349,11 +349,40 @@ setTimeout(() => {
   r = await request(4, 'nothing');
   assert.strictEqual(r[0].LIST_COUNT, 0);
 
-  // get: utf-8 safe truncation to 1500 bytes
+  // get: long memos come in pages of at most 1500 bytes, split utf-8 safe;
+  // a flag tells that another page follows
   r = await request(5, 'memos/u1');
   assert.strictEqual(r[0].STATUS, 0);
   assert.ok(bytes(r[0].TEXT) <= 1500 && r[0].TEXT.startsWith('pÜnïcödé 😀'));
   assert.ok(!/�/.test(Buffer.from(r[0].TEXT).toString()));
+  assert.strictEqual(r[0].ITEM_FLAGS & 4, 4);
+  let page1 = await request(5, 'memos/u1', undefined, 1);
+  assert.ok(bytes(page1[0].TEXT) <= 1500);
+  assert.strictEqual(page1[0].ITEM_FLAGS & 4, 0);
+  assert.strictEqual(
+      (r[0].TEXT + page1[0].TEXT).replace(/[^x]/g, '').length, 2000);
+  assert.strictEqual((await request(5, 'memos/u1', undefined, 5))[0].TEXT, '');
+
+  // pages also end after 60 lines; a long paragraph is split at spaces
+  memos.push({
+    name: 'memos/lines',
+    content: Array.from({length: 100}, (_, i) => '- item ' + i).join('\n') +
+        '\n' +
+        'word '.repeat(300),
+    state: 'NORMAL'
+  });
+  r = await request(5, 'memos/lines');
+  assert.strictEqual(r[0].TEXT.split('\n').length, 60);
+  assert.strictEqual(r[0].TEXT.split('\n')[59], 'bitem 59');
+  page1 = await request(5, 'memos/lines', undefined, 1);
+  const rest = page1[0].TEXT.split('\n');
+  assert.deepStrictEqual(
+      [rest[0], rest.length, page1[0].ITEM_FLAGS & 4], ['bitem 60', 41, 4]);
+  assert.ok(/^pword( word)*$/.test(rest[40]) && bytes(rest[40]) <= 1000);
+  const page2 = await request(5, 'memos/lines', undefined, 2);
+  assert.deepStrictEqual(
+      [page2[0].TEXT.split('\n').length, page2[0].ITEM_FLAGS & 4], [1, 0]);
+  memos = memos.filter(x => x.name !== 'memos/lines');
 
   // markdown is converted into typed lines for the watch
   r = await request(5, 'memos/md1');

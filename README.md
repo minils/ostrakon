@@ -48,7 +48,8 @@ Ostrakon started as a fork of [pebble-memos](https://github.com/erimow/pebble-me
 * **Search** by dictating a few words; the results show the search term in the title bar.
 * Memos are shown with their **markdown** rendered: headings, task checkboxes, bullets, quotes, code and tags.
 * **Long memos** are loaded page by page: the next part is loaded while you scroll towards the end.
-* **Comments** of a memo can be opened from its menu if it has any. They are listed with author and time; each comment has its own menu to open, append to, archive or delete it, or to add a new comment.
+* Select opens a memo right away; its menu (Tasks, Comments, Append, Pin, Archive, Delete …) is opened with Select in the memo, or with a long press in the list.
+* **Comments** of a memo can be opened from its menu if it has any. They are listed with author and time and open with Select; each comment has its own menu to append to, archive or delete it, or to add a new comment.
 * Recently loaded memos are cached on the phone, so lists and memos also open without internet.
 * The watch keeps a small cache of the lists and memos opened last, so they can be read even without a connection to the phone. It only uses the storage the drafts leave free.
 

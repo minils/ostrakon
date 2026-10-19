@@ -13,10 +13,10 @@ Pinned memos = Mémos épinglés
 Tags = Tags
 Memos by tag = Mémos par tag
 Search = Recherche
-Dictate words to find = Dicter les mots à chercher
+Dictate words to find = Dicter la recherche
 Drafts = Brouillons
 None saved = Aucun brouillon
-%d saved = %d brouillons
+%d saved = Brouillons : %d
 
 # title bars
 Draft = Brouillon

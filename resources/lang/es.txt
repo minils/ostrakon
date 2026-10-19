@@ -13,10 +13,10 @@ Pinned memos = Memos fijados
 Tags = Etiquetas
 Memos by tag = Memos por etiqueta
 Search = Buscar
-Dictate words to find = Dictar palabras a buscar
+Dictate words to find = Dictar la búsqueda
 Drafts = Borradores
 None saved = Sin borradores
-%d saved = %d borradores
+%d saved = Borradores: %d
 
 # title bars
 Draft = Borrador

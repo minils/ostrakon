@@ -13,10 +13,10 @@ Pinned memos = Memo fissati
 Tags = Tag
 Memos by tag = Memo per tag
 Search = Cerca
-Dictate words to find = Detta le parole da cercare
+Dictate words to find = Detta cosa cercare
 Drafts = Bozze
 None saved = Nessuna bozza
-%d saved = %d bozze
+%d saved = Bozze: %d
 
 # title bars
 Draft = Bozza

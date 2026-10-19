@@ -1,0 +1,78 @@
+# Italian texts of the watch app, loaded as a resource when the watch
+# shows Italian. Each line is the English text as written in tr("...") in
+# src/c, " = " and the translation; \n is a line break. Lines starting
+# with # are comments. A missing line shows the English text.
+
+# main menu
+New = Nuovo
+Dictate a memo = Detta un memo
+Recent = Recenti
+Latest memos = Ultimi memo
+Pinned = Fissati
+Pinned memos = Memo fissati
+Tags = Tag
+Memos by tag = Memo per tag
+Search = Cerca
+Dictate words to find = Detta le parole da cercare
+Drafts = Bozze
+None saved = Nessuna bozza
+%d saved = %d bozze
+
+# title bars
+Draft = Bozza
+Comment = Commento
+Append = Aggiungi
+Memo = Memo
+Comments = Commenti
+
+# actions
+Send = Invia
+Dictate more = Continua a dettare
+Discard = Scarta
+Yes, discard = Sì, scarta
+Open = Apri
+Tasks = Attività
+New comment = Nuovo commento
+Pin / Unpin = Fissa / Sblocca
+Archive = Archivia
+Delete = Elimina
+Yes, delete = Sì, elimina
+Cancel = Annulla
+
+# results
+Archived = Archiviato
+Deleted = Eliminato
+Sent = Inviato
+Comment added = Commento aggiunto
+Appended = Aggiunto
+Comment discarded = Commento scartato
+Append discarded = Aggiunta scartata
+Saved as draft = Salvato come bozza
+Draft deleted = Bozza eliminata
+Drafts full.\nSend or discard. = Bozze piene.\nInvia o scarta.
+Phone unreachable.\nSaved as draft. = Telefono non raggiungibile.\nSalvato come bozza.
+Nothing to send = Niente da inviare
+Sending... = Invio...
+Dictation Failed = Dettatura non riuscita
+Memo too long = Memo troppo lungo
+
+# lists
+Load more = Carica altri
+No drafts = Nessuna bozza
+No matches = Nessun risultato
+No memos = Nessun memo
+No pinned memos = Nessun memo fissato
+No tags = Nessun tag
+No tasks = Nessuna attività
+No comments yet = Ancora nessun commento
+
+# connection
+No response from phone = Nessuna risposta dal telefono
+Phone not connected = Telefono non connesso
+Request failed = Richiesta non riuscita
+Offline: saved on watch = Offline: salvato sull'orologio
+
+# app glance
+No open todos = Nessuna attività aperta
+1 open todo = 1 attività aperta
+%d open todos = %d attività aperte

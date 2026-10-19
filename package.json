@@ -46,6 +46,22 @@
       	"type": "bitmap",
       	"name": "IMAGE_ICON",
       	"file": "memosicon.png"
+      }, {
+        "type": "raw",
+        "name": "LANG_DE",
+        "file": "lang/de.txt"
+      }, {
+        "type": "raw",
+        "name": "LANG_FR",
+        "file": "lang/fr.txt"
+      }, {
+        "type": "raw",
+        "name": "LANG_ES",
+        "file": "lang/es.txt"
+      }, {
+        "type": "raw",
+        "name": "LANG_IT",
+        "file": "lang/it.txt"
       }]
     }
   }

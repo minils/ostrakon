@@ -1,0 +1,78 @@
+# Spanish texts of the watch app, loaded as a resource when the watch
+# shows Spanish. Each line is the English text as written in tr("...") in
+# src/c, " = " and the translation; \n is a line break. Lines starting
+# with # are comments. A missing line shows the English text.
+
+# main menu
+New = Nuevo
+Dictate a memo = Dictar un memo
+Recent = Recientes
+Latest memos = Últimos memos
+Pinned = Fijados
+Pinned memos = Memos fijados
+Tags = Etiquetas
+Memos by tag = Memos por etiqueta
+Search = Buscar
+Dictate words to find = Dictar palabras a buscar
+Drafts = Borradores
+None saved = Sin borradores
+%d saved = %d borradores
+
+# title bars
+Draft = Borrador
+Comment = Comentario
+Append = Añadir
+Memo = Memo
+Comments = Comentarios
+
+# actions
+Send = Enviar
+Dictate more = Seguir dictando
+Discard = Descartar
+Yes, discard = Sí, descartar
+Open = Abrir
+Tasks = Tareas
+New comment = Nuevo comentario
+Pin / Unpin = Fijar / Soltar
+Archive = Archivar
+Delete = Eliminar
+Yes, delete = Sí, eliminar
+Cancel = Cancelar
+
+# results
+Archived = Archivado
+Deleted = Eliminado
+Sent = Enviado
+Comment added = Comentario añadido
+Appended = Añadido
+Comment discarded = Comentario descartado
+Append discarded = Añadido descartado
+Saved as draft = Guardado como borrador
+Draft deleted = Borrador eliminado
+Drafts full.\nSend or discard. = Borradores llenos.\nEnvía o descarta.
+Phone unreachable.\nSaved as draft. = Teléfono inaccesible.\nGuardado como borrador.
+Nothing to send = Nada que enviar
+Sending... = Enviando...
+Dictation Failed = Error de dictado
+Memo too long = Memo demasiado largo
+
+# lists
+Load more = Cargar más
+No drafts = Sin borradores
+No matches = Sin resultados
+No memos = Sin memos
+No pinned memos = Sin memos fijados
+No tags = Sin etiquetas
+No tasks = Sin tareas
+No comments yet = Aún no hay comentarios
+
+# connection
+No response from phone = Sin respuesta del teléfono
+Phone not connected = Teléfono no conectado
+Request failed = Error en la solicitud
+Offline: saved on watch = Sin conexión: guardado en el reloj
+
+# app glance
+No open todos = Sin tareas pendientes
+1 open todo = 1 tarea pendiente
+%d open todos = %d tareas pendientes

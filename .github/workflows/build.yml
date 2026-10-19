@@ -23,6 +23,9 @@ jobs:
       - name: Test phone-side JS
         run: node test/pkjs.test.js
 
+      - name: Check watch translations
+        run: node test/i18n.test.js
+
       - name: Check formatting (clang-format, Google style)
         run: |
           clang-format --version

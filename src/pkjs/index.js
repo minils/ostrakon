@@ -471,9 +471,19 @@ function memoTime(memo) {
   return Date.parse(memo.displayTime || memo.createTime || '') || 0;
 }
 
+// The parsed cache is kept in memory as long as the stored text is the one
+// it was parsed from, so the large JSON is not parsed on every request
+var cachedRaw = null;
+var cachedMemos = [];
+
 function loadCache() {
   try {
-    return loadStored(CACHE_KEY) || [];
+    var raw = localStorage.getItem(CACHE_KEY);
+    if (raw !== cachedRaw) {
+      cachedMemos = (raw && JSON.parse(raw)) || [];
+      cachedRaw = raw;
+    }
+    return cachedMemos;
   } catch (err) {
     return [];
   }
@@ -481,8 +491,11 @@ function loadCache() {
 
 function saveCache(memos) {
   try {
-    localStorage.setItem(
-        CACHE_KEY, JSON.stringify(memos.slice(0, MAX_CACHED_MEMOS)));
+    var kept = memos.slice(0, MAX_CACHED_MEMOS);
+    var raw = JSON.stringify(kept);
+    localStorage.setItem(CACHE_KEY, raw);
+    cachedRaw = raw;
+    cachedMemos = kept;
   } catch (err) {
     console.log('Ostrakon: Could not save cache', err);
   }
@@ -677,6 +690,9 @@ function apiRequest(method, path, body, callback) {
     return;
   }
 
+  // a change makes the kept answers outdated, also if it fails half way
+  if (method !== 'GET') clearResponses();
+
   var xhr = new XMLHttpRequest();
   xhr.open(method, apiBase(settings.url) + '/api/v1/' + path, true);
   xhr.setRequestHeader('Content-Type', 'application/json');
@@ -684,6 +700,7 @@ function apiRequest(method, path, body, callback) {
   xhr.timeout = TIMEOUT_MS;
 
   xhr.onload = function() {
+    if (method !== 'GET') clearResponses();
     if (xhr.status < 200 || xhr.status >= 300) {
       callback('Server error ' + xhr.status);
       return;
@@ -707,6 +724,42 @@ function apiRequest(method, path, body, callback) {
   xhr.send(body ? JSON.stringify(body) : null);
 }
 
+// Answers of GET requests are kept for a short time, so going from one
+// list to the next (tags, then a tag, or "Load more") or scrolling through
+// a long memo does not load the same memos again. Any change clears them.
+var RESPONSE_MAX_AGE_MS = 30000;
+var MAX_RESPONSES = 10;
+var responses = [];
+
+function clearResponses() {
+  responses = [];
+}
+
+// Like a GET with apiRequest, but answered from memory if the same request
+// succeeded less than maxAge ago; callback(err, data, fromMemory)
+function cachedGet(path, maxAge, callback) {
+  var settings = getSettings() || {};
+  var key = settings.url + ' ' + settings.token + ' ' + path;
+  var now = Date.now();
+  for (var i = 0; i < responses.length; i++) {
+    if (responses[i].key === key && now - responses[i].time < maxAge) {
+      callback(null, responses[i].data, true);
+      return;
+    }
+  }
+  apiRequest('GET', path, null, function(err, data) {
+    if (!err) {
+      responses = responses
+                      .filter(function(response) {
+                        return response.key !== key;
+                      })
+                      .concat({key: key, time: Date.now(), data: data})
+                      .slice(-MAX_RESPONSES);
+    }
+    callback(err, data, false);
+  });
+}
+
 function filterMemos(memos, accept, limit) {
   var result = [];
   for (var i = 0; i < memos.length && result.length < limit; i++) {
@@ -723,12 +776,14 @@ function filterMemos(memos, accept, limit) {
 // connection the cached memos are used; callback(err, memos, offline).
 function fetchMemos(accept, limit, callback) {
   var fetched = [];
+  // the cache only needs an update if something came from the server
+  var fresh = false;
 
   function fetchPage(pageToken, pagesLeft) {
     var path = 'memos?pageSize=' + PAGE_SIZE +
         (pageToken ? '&pageToken=' + encodeURIComponent(pageToken) : '');
 
-    apiRequest('GET', path, null, function(err, data) {
+    cachedGet(path, RESPONSE_MAX_AGE_MS, function(err, data, fromMemory) {
       if (err) {
         var cached = loadCache();
         if (isOfflineError(err) && cached.length > 0) {
@@ -739,12 +794,13 @@ function fetchMemos(accept, limit, callback) {
         return;
       }
 
+      fresh = fresh || !fromMemory;
       fetched = fetched.concat(data.memos || []);
       var result = filterMemos(fetched, accept, limit);
       if (result.length < limit && data.nextPageToken && pagesLeft > 1) {
         fetchPage(data.nextPageToken, pagesLeft - 1);
       } else {
-        updateCache(fetched, !data.nextPageToken);
+        if (fresh) updateCache(fetched, !data.nextPageToken);
         callback(null, result, false);
       }
     });
@@ -1068,8 +1124,13 @@ function handleListComments(req) {
   });
 }
 
+// A memo is loaded when it is opened; its further pages come from that
+// answer, so the pages fit together and are there right away
+var MEMO_PAGES_MAX_AGE_MS = 600000;
+
 function handleGet(req) {
-  apiRequest('GET', req.target, null, function(err, memo) {
+  var maxAge = req.offset > 0 ? MEMO_PAGES_MAX_AGE_MS : 0;
+  cachedGet(req.target, maxAge, function(err, memo) {
     if (err && isOfflineError(err)) memo = findInCache(req.target);
     if (!memo) {
       replyError(req, err || 'Memo not found');

@@ -1,6 +1,7 @@
 // End-to-end test of src/pkjs/index.js against a mock Memos server.
 // Stubs the PebbleKit JS environment and simulates watch requests.
-// Run with: node test/pkjs.test.js (needs Node 18+ for fetch)
+// Run with: node test/pkjs.test.js (needs Node 18+ for fetch), or with
+// PKJS_BUNDLE=build/pebble-js-app.js after a build
 process.env.TZ = 'UTC';  // dates in list subtitles are local time
 const http = require('http');
 const assert = require('assert');
@@ -87,6 +88,8 @@ memos.push({
 const created = [], comments = [];
 let serverDown = false;
 let userRequests = 0;
+// GET requests per path, to tell which answers came from the phone's memory
+const gets = {};
 const server = http.createServer((req, res) => {
   if (serverDown) return req.socket.destroy();
   let body = '';
@@ -102,6 +105,7 @@ const server = http.createServer((req, res) => {
       res.end(JSON.stringify(obj));
     };
     let m;
+    if (req.method === 'GET') gets[u.pathname] = (gets[u.pathname] || 0) + 1;
     if (req.method === 'GET' && u.pathname === '/api/v1/memos') {
       const size = +u.searchParams.get('pageSize'),
             start = +(u.searchParams.get('pageToken') || 0);
@@ -223,7 +227,11 @@ Module._load = function(request, ...rest) {
   return request === 'message_keys' ? {} :
                                       originalLoad.call(this, request, ...rest);
 };
-require(path.join(__dirname, '..', 'src', 'pkjs', 'index.js'));
+// PKJS_BUNDLE tests the built bundle instead, which is minified
+require(
+    process.env.PKJS_BUNDLE ?
+        path.resolve(process.env.PKJS_BUNDLE) :
+        path.join(__dirname, '..', 'src', 'pkjs', 'index.js'));
 
 let reqId = 0;
 // What the Clay settings page sends back when it is saved
@@ -343,7 +351,9 @@ setTimeout(() => {
   assert.deepStrictEqual(
       r.slice(1).map(m => [m.ITEM_ID, m.ITEM_TITLE, m.ITEM_SUBTITLE]), tags);
 
-  // by tag: across pages, limited to 20; "proj" also matches "proj/a"
+  // by tag: across pages, limited to 20; "proj" also matches "proj/a".
+  // The memos loaded for the tags are used again.
+  const listGets = gets['/api/v1/memos'];
   r = await request(4, 'work');
   assert.strictEqual(r[0].LIST_COUNT, 20);
   assert.ok(r.slice(1).every(m => +m.ITEM_ID.slice(7) % 3 === 0));
@@ -351,6 +361,7 @@ setTimeout(() => {
   assert.deepStrictEqual(r.slice(1).map(m => m.ITEM_ID), ['memos/p1']);
   r = await request(4, 'nothing');
   assert.strictEqual(r[0].LIST_COUNT, 0);
+  assert.strictEqual(gets['/api/v1/memos'], listGets);
 
   // get: long memos come in pages of at most 1500 bytes, split utf-8 safe;
   // a flag tells that another page follows
@@ -359,7 +370,9 @@ setTimeout(() => {
   assert.ok(bytes(r[0].TEXT) <= 1500 && r[0].TEXT.startsWith('pÜnïcödé 😀'));
   assert.ok(!/�/.test(Buffer.from(r[0].TEXT).toString()));
   assert.strictEqual(r[0].ITEM_FLAGS & 4, 4);
+  // the next pages come from the memo loaded for the first one
   let page1 = await request(5, 'memos/u1', undefined, 1);
+  assert.strictEqual(gets['/api/v1/memos/u1'], 1);
   assert.ok(bytes(page1[0].TEXT) <= 1500);
   assert.strictEqual(page1[0].ITEM_FLAGS & 4, 0);
   assert.strictEqual(
@@ -451,11 +464,18 @@ setTimeout(() => {
   // archive and delete remove memos from the recent list
   assert.strictEqual((await request(6, 'memos/m1'))[0].STATUS, 0);
   assert.strictEqual((await request(7, 'memos/m2'))[0].STATUS, 0);
+  // after a change the list is loaded again
+  const changedGets = gets['/api/v1/memos'];
   r = await request(2);
   assert.ok(!r.slice(1).some(
       m => m.ITEM_ID === 'memos/m1' || m.ITEM_ID === 'memos/m2'));
+  assert.strictEqual(gets['/api/v1/memos'], changedGets + 1);
   r = await request(7, 'memos/nope');
   assert.deepStrictEqual([r[0].STATUS, r[0].TEXT], [1, 'Server error 404']);
+
+  // answers kept in memory expire, then the server is asked again
+  const realNow = Date.now;
+  Date.now = () => realNow() + 60000;
 
   // without a connection lists and memos come from the cache
   serverDown = true;

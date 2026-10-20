@@ -897,7 +897,7 @@ function handleCreate(req) {
       var queue = loadQueue();
       queue.push({content: content});
       saveQueue(queue);
-      replyOk(req, {'TEXT': translate('Offline: memo queued')});
+      replyOk(req, {'TEXT': translate('Offline:\nMemo queued')});
       return;
     }
     if (err) {

@@ -643,9 +643,10 @@ setTimeout(() => {
   // offline: new memos are queued and sent with the next request
   serverDown = true;
   r = await request(1, null, 'written offline');
-  assert.deepStrictEqual([r[0].STATUS, r[0].TEXT], [0, 'Offline: memo queued']);
+  assert.deepStrictEqual(
+      [r[0].STATUS, r[0].TEXT], [0, 'Offline:\nMemo queued']);
   r = await request(1, null, 'also offline');
-  assert.strictEqual(r[0].TEXT, 'Offline: memo queued');
+  assert.strictEqual(r[0].TEXT, 'Offline:\nMemo queued');
   assert.strictEqual(
       JSON.parse(localStorage.getItem('ostrakon_queue')).length, 2);
   serverDown = false;

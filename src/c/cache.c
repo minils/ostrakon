@@ -1,6 +1,7 @@
 #include "cache.h"
 
 #include "drafts.h"
+#include "i18n.h"
 
 /* ---------- Persistent storage keys ---------- */
 // An index of the entries, most recently stored first, and the chunks
@@ -41,6 +42,13 @@ static uint32_t hash(const char *data, size_t size) {
     h = (h ^ (uint8_t)data[i]) * 16777619u;
   }
   return h;
+}
+
+// The phone formats the cached texts, e.g. dates, in the current language,
+// so an entry belongs to the language it was stored in; after a language
+// change the old entries are not found and make room for new ones
+static uint32_t key_hash(const char *key, Language language) {
+  return (hash(key, strlen(key)) ^ language) * 16777619u;
 }
 
 static void read_index(CacheIndex *index) {
@@ -141,10 +149,10 @@ void cache_store(const char *key, int32_t flags, const char *data,
   }
   CacheIndex index;
   read_index(&index);
-  uint32_t key_hash = hash(key, strlen(key));
+  uint32_t entry_key = key_hash(key, i18n_language());
   uint32_t data_hash = hash(data, size);
 
-  int existing = find(&index, key_hash);
+  int existing = find(&index, entry_key);
   if (existing >= 0) {
     CacheEntry entry = index.entries[existing];
     if (entry.data_hash == data_hash && entry.size == size &&
@@ -160,7 +168,7 @@ void cache_store(const char *key, int32_t flags, const char *data,
   }
 
   CacheEntry entry = {
-      .key_hash = key_hash,
+      .key_hash = entry_key,
       .data_hash = data_hash,
       .size = size,
       .flags = flags,
@@ -201,7 +209,7 @@ void cache_store(const char *key, int32_t flags, const char *data,
 bool cache_load(const char *key, int32_t *flags, char *buffer, size_t size) {
   CacheIndex index;
   read_index(&index);
-  int i = find(&index, hash(key, strlen(key)));
+  int i = find(&index, key_hash(key, i18n_language()));
   if (i < 0 || size == 0) {
     return false;
   }
@@ -226,9 +234,18 @@ bool cache_load(const char *key, int32_t *flags, char *buffer, size_t size) {
 void cache_remove(const char *key) {
   CacheIndex index;
   read_index(&index);
-  int i = find(&index, hash(key, strlen(key)));
-  if (i >= 0) {
-    remove_entry(&index, i);
+  // in every language, so a deleted memo does not come back after a
+  // language change
+  bool removed = false;
+  for (Language language = LanguageEnglish; language < LanguageCount;
+       language++) {
+    int i = find(&index, key_hash(key, language));
+    if (i >= 0) {
+      remove_entry(&index, i);
+      removed = true;
+    }
+  }
+  if (removed) {
     write_index(&index);
   }
 }

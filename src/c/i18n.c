@@ -177,6 +177,8 @@ void i18n_set_language(Language language) {
   update();
 }
 
+Language i18n_language(void) { return s_language; }
+
 const char *tr(const char *english) {
   if (!s_table) {
     return english;

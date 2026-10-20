@@ -70,7 +70,7 @@ No comments yet = Noch keine Kommentare
 No response from phone = Keine Antwort vom Handy
 Phone not connected = Handy nicht verbunden
 Request failed = Anfrage fehlgeschlagen
-No phone: last loaded version = Kein Handy: zuletzt geladener Stand
+No phone: loading last version = Kein Handy: lade letzten Stand
 
 # app glance
 No open todos = Keine offenen Aufgaben

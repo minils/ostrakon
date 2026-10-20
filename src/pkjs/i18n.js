@@ -42,8 +42,8 @@ var TRANSLATIONS = {
     'Memo not found': 'Mémo introuvable',
     'Memo changed, reload tasks': 'Mémo modifié, rechargez les tâches',
     'Phone error': 'Erreur du téléphone',
-    'Offline: cached memos': 'Hors ligne : mémos en cache',
-    'Offline: memo queued': 'Hors ligne : mémo en attente',
+    'Offline: cached memos': 'Hors ligne\u00a0: mémos en cache',
+    'Offline: memo queued': 'Hors ligne\u00a0: mémo en attente',
     'Queued memo sent': 'Mémo en attente envoyé',
     'Connected to Memos': 'Connecté à Memos',
     'API not found, check URL': 'API introuvable, vérifiez l\'URL',
@@ -134,7 +134,7 @@ var PATTERNS = [
   [
     /^Queued memo rejected: (.*)$/, {
       de: 'Vorgemerktes Memo abgelehnt: $1',
-      fr: 'Mémo en attente refusé : $1',
+      fr: 'Mémo en attente refusé\u00a0: $1',
       es: 'Memo en cola rechazado: $1',
       it: 'Memo in coda rifiutato: $1'
     }
@@ -321,7 +321,7 @@ var PAGE = {
     tagline: 'Votre serveur Memos auto-hébergé à votre poignet.',
     connection: 'Connexion',
     url: 'URL du serveur Memos',
-    urlHint: 'Exemple : https://memos.example.com',
+    urlHint: 'Exemple\u00a0: https://memos.example.com',
     token: 'Jeton d\'accès',
     tokenHint: 'Créez-en un dans Memos sous Paramètres, Jetons d\'accès.',
     tokenPlaceholder: 'Votre jeton d\'accès',

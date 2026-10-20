@@ -22,6 +22,13 @@ def configure(ctx):
     """
     ctx.load('pebble_sdk')
 
+    # PBL_API_EXISTS() expands to defined(), and the SDK's linker script
+    # makes a RWX segment; both only warn about the SDK itself
+    for platform in ctx.env.TARGET_PLATFORMS:
+        env = ctx.all_envs[platform]
+        env.append_value('CFLAGS', ['-Wno-expansion-to-defined'])
+        env.append_value('LINKFLAGS', ['-Wl,--no-warn-rwx-segments'])
+
 
 def build(ctx):
     ctx.load('pebble_sdk')

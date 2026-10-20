@@ -121,8 +121,8 @@ typedef struct {
 
 #define GLYPH_ADVANCE 4
 static const Word WORDS[] = {
-    {{8, 11}, 4, {1, 3, 0, 4}}, {{26, 11}, 4, {2, 5, 1, 0}},
-    {{10, 20}, 3, {4, 0, 3}},   {{24, 20}, 4, {5, 1, 2, 3}},
+    {{8, 11}, 4, {1, 3, 0, 4}},  {{26, 11}, 4, {2, 5, 1, 0}},
+    {{10, 20}, 3, {4, 0, 3}},    {{24, 20}, 4, {5, 1, 2, 3}},
     {{15, 29}, 4, {0, 4, 5, 1}},
 };
 #define NUM_WORDS ((int)ARRAY_LENGTH(WORDS))
@@ -180,8 +180,7 @@ static void loading_update(Layer *layer, GContext *ctx) {
       for (int s = 0; s < glyph->num_strokes; s++) {
         GPoint from = GPoint(at.x + glyph->from[s].x, at.y + glyph->from[s].y);
         GPoint to = GPoint(at.x + glyph->to[s].x, at.y + glyph->to[s].y);
-        graphics_draw_line(ctx, shard_point(data, from),
-                           shard_point(data, to));
+        graphics_draw_line(ctx, shard_point(data, from), shard_point(data, to));
       }
     }
   }
@@ -192,8 +191,7 @@ static void loading_tick(void *context) {
   LoadingData *data = layer_get_data(layer);
   data->frame++;
   layer_mark_dirty(layer);
-  data->timer =
-      app_timer_register(LOADING_SHARD_FRAME_MS, loading_tick, layer);
+  data->timer = app_timer_register(LOADING_SHARD_FRAME_MS, loading_tick, layer);
 }
 
 Layer *ui_loading_layer_create(GRect frame) {
@@ -204,8 +202,8 @@ Layer *ui_loading_layer_create(GRect frame) {
 
   // half the shorter side, so the shard fits round displays too
   data->size = (frame.size.w < frame.size.h ? frame.size.w : frame.size.h) / 2;
-  data->origin = GPoint((frame.size.w - data->size) / 2,
-                        (frame.size.h - data->size) / 2);
+  data->origin =
+      GPoint((frame.size.w - data->size) / 2, (frame.size.h - data->size) / 2);
   for (int i = 0; i < SHARD_NUM_POINTS; i++) {
     data->points[i] = shard_point(data, SHARD_POINTS[i]);
   }

@@ -10,24 +10,27 @@
 #define DEFAULT_CELL_HEIGHT 0
 #endif
 
-// An empty list shows its status, e.g. an error, in a highlighted box that
-// grows with the text, in the middle of the list; a one-line menu row
-// would cut longer texts off
+// An empty list shows its status, e.g. an error, over the whole list
+// area like a Pebble dialog: a background color by its kind, the icon of
+// the system dialogs for warnings and errors, and the wrapped text, all
+// in the middle (the layout of simple_dialog in PebbleOS)
 #if PBL_DISPLAY_WIDTH >= 200
-#define STATUS_FONT_KEY FONT_KEY_GOTHIC_28_BOLD
-#define STATUS_MIN_HEIGHT DEFAULT_CELL_HEIGHT
+#define STATUS_FONT_KEY FONT_KEY_GOTHIC_28
+#define STATUS_ICON_SPACING PBL_IF_ROUND_ELSE(8, 16)
 #else
 #define STATUS_FONT_KEY FONT_KEY_GOTHIC_24_BOLD
-#define STATUS_MIN_HEIGHT \
-  PBL_IF_ROUND_ELSE(MENU_CELL_ROUND_FOCUSED_SHORT_CELL_HEIGHT, 44)
+#define STATUS_ICON_SPACING PBL_IF_ROUND_ELSE(2, 4)
 #endif
-#define STATUS_INSET PBL_IF_ROUND_ELSE(16, 5)
-#define STATUS_WARNING_COLOR PBL_IF_COLOR_ELSE(GColorChromeYellow, GColorBlack)
-#define STATUS_WARNING_TEXT_COLOR PBL_IF_COLOR_ELSE(GColorBlack, GColorWhite)
-#define STATUS_ERROR_COLOR \
-  PBL_IF_COLOR_ELSE(GColorDarkCandyAppleRed, GColorBlack)
+#define STATUS_INSET PBL_IF_ROUND_ELSE(16, 6)
 // the system fonts leave room above the letters
 #define STATUS_FONT_TOP 6
+// black and white watches show dialogs black on white, so the black lines
+// of the icons stay visible
+#define STATUS_INFO_COLOR PBL_IF_COLOR_ELSE(UI_HIGHLIGHT_COLOR, GColorWhite)
+#define STATUS_WARNING_COLOR PBL_IF_COLOR_ELSE(GColorChromeYellow, GColorWhite)
+#define STATUS_ERROR_COLOR \
+  PBL_IF_COLOR_ELSE(GColorDarkCandyAppleRed, GColorWhite)
+#define STATUS_LIGHT_TEXT_COLOR PBL_IF_COLOR_ELSE(GColorWhite, GColorBlack)
 
 struct ListWindow {
   Window *window;
@@ -36,6 +39,7 @@ struct ListWindow {
   void *context;
   char status[64];
   ListStatus status_kind;
+  GDrawCommandImage *status_icon;  // of status_kind, NULL for none
   char title[64];
   Layer *title_bar;
   // while loading, an empty list shows animated dots instead of rows and
@@ -110,44 +114,47 @@ static void select_click(MenuLayer *menu_layer, MenuIndex *cell_index,
 static void status_update(Layer *layer, GContext *ctx) {
   ListWindow *list = *(ListWindow **)layer_get_data(layer);
   GRect bounds = layer_get_bounds(layer);
-  GFont font = fonts_get_system_font(STATUS_FONT_KEY);
-  GTextAlignment alignment = GTextAlignmentCenter;
-  GRect text = grect_inset(bounds, GEdgeInsets(0, STATUS_INSET));
-  GSize size = graphics_text_layout_get_content_size(
-      list->status, font, text, GTextOverflowModeWordWrap, alignment);
-
-  int16_t height = size.h + STATUS_FONT_TOP;
-  if (height < STATUS_MIN_HEIGHT) {
-    height = STATUS_MIN_HEIGHT;
-  }
-  if (height > bounds.size.h) {
-    height = bounds.size.h;
-  }
-  // in the middle of the list, like the selected row on round displays
-  GRect box = GRect(0, (bounds.size.h - height) / 2, bounds.size.w, height);
-  GColor color = UI_HIGHLIGHT_COLOR;
-  GColor text_color = UI_HIGHLIGHT_TEXT_COLOR;
-  if (list->status_kind == ListStatusWarning) {
+  GColor color = STATUS_INFO_COLOR;
+  GColor text_color = STATUS_LIGHT_TEXT_COLOR;
+  if (list->status_kind == ListStatusNoPhone ||
+      list->status_kind == ListStatusOffline) {
     color = STATUS_WARNING_COLOR;
-    text_color = STATUS_WARNING_TEXT_COLOR;
+    text_color = GColorBlack;
   } else if (list->status_kind == ListStatusError) {
     color = STATUS_ERROR_COLOR;
   }
   graphics_context_set_fill_color(ctx, color);
-  graphics_fill_rect(ctx, box, 0, GCornerNone);
+  graphics_fill_rect(ctx, bounds, 0, GCornerNone);
 
-  text.origin.y = box.origin.y + (height - size.h - STATUS_FONT_TOP) / 2;
-  text.size.h = height;
+  GFont font = fonts_get_system_font(STATUS_FONT_KEY);
+  GRect text = grect_inset(bounds, GEdgeInsets(0, STATUS_INSET));
+  GSize text_size = graphics_text_layout_get_content_size(
+      list->status, font, text, GTextOverflowModeWordWrap,
+      GTextAlignmentCenter);
+  GSize icon_size = list->status_icon
+                        ? gdraw_command_image_get_bounds_size(list->status_icon)
+                        : GSizeZero;
+  int16_t spacing = list->status_icon ? STATUS_ICON_SPACING : 0;
+
+  // icon and text together in the middle
+  int16_t height = icon_size.h + spacing + text_size.h;
+  int16_t top = height < bounds.size.h ? (bounds.size.h - height) / 2 : 0;
+  if (list->status_icon) {
+    gdraw_command_image_draw(ctx, list->status_icon,
+                             GPoint((bounds.size.w - icon_size.w) / 2, top));
+  }
+  text.origin.y = top + icon_size.h + spacing - STATUS_FONT_TOP;
+  text.size.h = bounds.size.h - text.origin.y;
   graphics_context_set_text_color(ctx, text_color);
   graphics_draw_text(ctx, list->status, font, text, GTextOverflowModeWordWrap,
-                     alignment, NULL);
+                     GTextAlignmentCenter, NULL);
 }
 
 static void update_status_layer(ListWindow *list) {
   if (list->status_layer) {
-    layer_set_hidden(
-        list->status_layer,
-        list->loading || list->callbacks.get_count(list->context) > 0);
+    layer_set_hidden(list->status_layer,
+                     list->loading || !list->status[0] ||
+                         list->callbacks.get_count(list->context) > 0);
     layer_mark_dirty(list->status_layer);
   }
 }
@@ -218,6 +225,10 @@ static void window_unload(Window *window) {
   }
   ui_loading_layer_destroy(list->loading_layer);
   layer_destroy(list->status_layer);
+  if (list->status_icon) {
+    gdraw_command_image_destroy(list->status_icon);
+    list->status_icon = NULL;
+  }
   menu_layer_destroy(list->menu_layer);
   if (list->title_bar) {
     layer_destroy(list->title_bar);
@@ -301,6 +312,23 @@ void list_window_set_title(ListWindow *list, const char *title) {
 void list_window_set_status(ListWindow *list, const char *status,
                             ListStatus kind) {
   ui_copy_truncated(list->status, status, sizeof(list->status));
+  if (kind != list->status_kind || !list->status_icon) {
+    if (list->status_icon) {
+      gdraw_command_image_destroy(list->status_icon);
+      list->status_icon = NULL;
+    }
+    // the icons PebbleOS shows for the same problems, e.g. in dictation
+    if (kind == ListStatusNoPhone) {
+      list->status_icon =
+          gdraw_command_image_create_with_resource(RESOURCE_ID_ICON_NO_PHONE);
+    } else if (kind == ListStatusOffline) {
+      list->status_icon = gdraw_command_image_create_with_resource(
+          RESOURCE_ID_ICON_NO_INTERNET);
+    } else if (kind == ListStatusError) {
+      list->status_icon =
+          gdraw_command_image_create_with_resource(RESOURCE_ID_ICON_ERROR);
+    }
+  }
   list->status_kind = kind;
   list_window_reload(list);
 }

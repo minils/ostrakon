@@ -22,10 +22,11 @@ ListWindow *list_window_create(ListWindowCallbacks callbacks, void *context);
 void list_window_push(ListWindow *list);
 void list_window_remove(ListWindow *list);
 void list_window_reload(ListWindow *list);
-// What a status text is about; it sets the color of the status
+// What a status text is about; it sets the color and icon of the status
 typedef enum {
   ListStatusInfo,     // e.g. an empty list
-  ListStatusWarning,  // a problem that may pass, e.g. no connection
+  ListStatusNoPhone,  // a warning: the phone is not connected or silent
+  ListStatusOffline,  // a warning: the phone cannot reach the server
   ListStatusError,    // a problem to fix, e.g. a rejected token
 } ListStatus;
 

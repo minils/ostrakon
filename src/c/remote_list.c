@@ -147,7 +147,7 @@ static void response_handler(DictionaryIterator *iter, void *context) {
   if (!iter) {
     set_loading(list, false);
     if (list->page_start > 0 || !show_cached_items(list)) {
-      show_error(list, tr("No response from phone"), ListStatusWarning);
+      show_error(list, tr("No response from phone"), ListStatusNoPhone);
     }
     return;
   }
@@ -155,7 +155,7 @@ static void response_handler(DictionaryIterator *iter, void *context) {
     finish(list);
     show_error(
         list, comm_response_error(iter),
-        comm_response_is_warning(iter) ? ListStatusWarning : ListStatusError);
+        comm_response_is_warning(iter) ? ListStatusOffline : ListStatusError);
     return;
   }
 
@@ -214,7 +214,7 @@ static void request_page(RemoteList *list) {
                         list->text[0] ? list->text : NULL, list->page_start,
                         response_handler, list));
   if (!list->loading && (list->page_start > 0 || !show_cached_items(list))) {
-    show_error(list, tr("Phone not connected"), ListStatusWarning);
+    show_error(list, tr("Phone not connected"), ListStatusNoPhone);
   }
 }
 

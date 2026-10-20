@@ -106,8 +106,7 @@ static void status_update(Layer *layer, GContext *ctx) {
   ListWindow *list = *(ListWindow **)layer_get_data(layer);
   GRect bounds = layer_get_bounds(layer);
   GFont font = fonts_get_system_font(STATUS_FONT_KEY);
-  GTextAlignment alignment =
-      PBL_IF_ROUND_ELSE(GTextAlignmentCenter, GTextAlignmentLeft);
+  GTextAlignment alignment = GTextAlignmentCenter;
   GRect text = grect_inset(bounds, GEdgeInsets(0, STATUS_INSET));
   GSize size = graphics_text_layout_get_content_size(
       list->status, font, text, GTextOverflowModeWordWrap, alignment);

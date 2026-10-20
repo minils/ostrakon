@@ -11,7 +11,8 @@
 #endif
 
 // An empty list shows its status, e.g. an error, in a highlighted box that
-// grows with the text; a one-line menu row would cut longer texts off
+// grows with the text, in the middle of the list; a one-line menu row
+// would cut longer texts off
 #if PBL_DISPLAY_WIDTH >= 200
 #define STATUS_FONT_KEY FONT_KEY_GOTHIC_28_BOLD
 #define STATUS_MIN_HEIGHT DEFAULT_CELL_HEIGHT
@@ -118,9 +119,8 @@ static void status_update(Layer *layer, GContext *ctx) {
   if (height > bounds.size.h) {
     height = bounds.size.h;
   }
-  // on round displays the selected row sits in the middle
-  GRect box = GRect(0, PBL_IF_ROUND_ELSE((bounds.size.h - height) / 2, 0),
-                    bounds.size.w, height);
+  // in the middle of the list, like the selected row on round displays
+  GRect box = GRect(0, (bounds.size.h - height) / 2, bounds.size.w, height);
   graphics_context_set_fill_color(ctx, UI_HIGHLIGHT_COLOR);
   graphics_fill_rect(ctx, box, 0, GCornerNone);
 

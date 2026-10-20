@@ -34,7 +34,8 @@ Layer *ui_select_hint_create(GRect window_bounds);
 void ui_draw_loading_dots(GContext *ctx, GPoint center, int frame,
                           bool on_highlight);
 
-// A layer showing animated loading dots while active, hidden otherwise
+// A layer showing the app's shard while active, with writing scratched
+// onto it glyph by glyph, hidden otherwise
 Layer *ui_loading_layer_create(GRect frame);
 void ui_loading_layer_set_active(Layer *layer, bool active);
 void ui_loading_layer_destroy(Layer *layer);

@@ -329,7 +329,7 @@ h1 {
 .spec { border-block: 1px solid var(--line); background: var(--bg-alt); }
 .spec-grid {
   display: grid; grid-template-columns: repeat(2, 1fr);
-  gap: 1px; background: var(--line);
+  gap: 1px; background: var(--line); background-clip: content-box;
 }
 @media (min-width: 640px) { .spec-grid { grid-template-columns: repeat(3, 1fr); } }
 @media (min-width: 1000px) { .spec-grid { grid-template-columns: repeat(6, 1fr); } }

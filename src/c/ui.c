@@ -85,15 +85,106 @@ void ui_draw_loading_dots(GContext *ctx, GPoint center, int frame,
   }
 }
 
+// The app icon's shard, on which the writing is scratched glyph by glyph.
+// Coordinates are in a 50x50 grid, twice that of the shard in
+// store/make_art.py.
+
+#define SHARD_GRID 50
+#define SHARD_NUM_POINTS 16
+static const GPoint SHARD_POINTS[SHARD_NUM_POINTS] = {
+    {1, 14},  {9, 7},   {16, 8},  {25, 3},  {35, 6},  {49, 10},
+    {46, 19}, {49, 26}, {42, 35}, {44, 41}, {32, 47}, {26, 42},
+    {17, 45}, {12, 37}, {4, 34},  {6, 24}};
+
+// made-up glyphs of one or two strokes in a 3x5 box
+typedef struct {
+  GPoint from[2];
+  GPoint to[2];
+  int num_strokes;
+} Glyph;
+
+static const Glyph GLYPHS[] = {
+    {{{0, 5}}, {{2, 0}}, 1},                  // slash
+    {{{0, 0}, {0, 4}}, {{0, 4}, {3, 3}}, 2},  // hook
+    {{{0, 1}, {1, 0}}, {{3, 1}, {1, 5}}, 2},  // cross
+    {{{0, 5}, {1, 0}}, {{1, 0}, {3, 5}}, 2},  // lambda
+    {{{0, 2}, {3, 2}}, {{3, 2}, {1, 5}}, 2},  // seven
+    {{{0, 0}, {0, 5}}, {{3, 5}, {1, 3}}, 2},  // tick
+};
+
+// one word per entry: where it starts and which glyphs it has
+typedef struct {
+  GPoint origin;
+  int num_glyphs;
+  uint8_t glyphs[4];
+} Word;
+
+#define GLYPH_ADVANCE 4
+static const Word WORDS[] = {
+    {{8, 11}, 4, {1, 3, 0, 4}}, {{26, 11}, 4, {2, 5, 1, 0}},
+    {{10, 20}, 3, {4, 0, 3}},   {{24, 20}, 4, {5, 1, 2, 3}},
+    {{15, 29}, 4, {0, 4, 5, 1}},
+};
+#define NUM_WORDS ((int)ARRAY_LENGTH(WORDS))
+#define NUM_WRITTEN_GLYPHS 19
+// frames the finished writing stays before it starts over
+#define LOADING_HOLD_FRAMES 8
+#define LOADING_SHARD_FRAME_MS 100
+
+#ifdef PBL_COLOR
+#define SHARD_FILL_COLOR GColorRajah
+#define SHARD_EDGE_COLOR GColorWindsorTan
+#define SHARD_INK_COLOR GColorBulgarianRose
+#else
+#define SHARD_FILL_COLOR GColorWhite
+#define SHARD_EDGE_COLOR GColorBlack
+#define SHARD_INK_COLOR GColorBlack
+#endif
+
 typedef struct {
   AppTimer *timer;
   int frame;
+  GPath *path;
+  GPoint points[SHARD_NUM_POINTS];
+  GPoint origin;
+  int size;
 } LoadingData;
+
+static GPoint shard_point(const LoadingData *data, GPoint grid) {
+  return GPoint(data->origin.x + grid.x * data->size / SHARD_GRID,
+                data->origin.y + grid.y * data->size / SHARD_GRID);
+}
 
 static void loading_update(Layer *layer, GContext *ctx) {
   LoadingData *data = layer_get_data(layer);
-  GRect bounds = layer_get_bounds(layer);
-  ui_draw_loading_dots(ctx, grect_center_point(&bounds), data->frame, false);
+
+  graphics_context_set_antialiased(ctx, true);
+  graphics_context_set_fill_color(ctx, SHARD_FILL_COLOR);
+  gpath_draw_filled(ctx, data->path);
+  graphics_context_set_stroke_color(ctx, SHARD_EDGE_COLOR);
+  graphics_context_set_stroke_width(ctx, 2);
+  gpath_draw_outline(ctx, data->path);
+
+  int written = data->frame % (NUM_WRITTEN_GLYPHS + LOADING_HOLD_FRAMES);
+  graphics_context_set_stroke_color(ctx, SHARD_INK_COLOR);
+  graphics_context_set_stroke_width(ctx, data->size >= 90 ? 3 : 2);
+  int count = 0;
+  for (int w = 0; w < NUM_WORDS; w++) {
+    const Word *word = &WORDS[w];
+    for (int g = 0; g < word->num_glyphs; g++) {
+      if (count++ >= written) {
+        return;
+      }
+      const Glyph *glyph = &GLYPHS[word->glyphs[g]];
+      GPoint at = GPoint(word->origin.x + g * GLYPH_ADVANCE, word->origin.y);
+      for (int s = 0; s < glyph->num_strokes; s++) {
+        GPoint from = GPoint(at.x + glyph->from[s].x, at.y + glyph->from[s].y);
+        GPoint to = GPoint(at.x + glyph->to[s].x, at.y + glyph->to[s].y);
+        graphics_draw_line(ctx, shard_point(data, from),
+                           shard_point(data, to));
+      }
+    }
+  }
 }
 
 static void loading_tick(void *context) {
@@ -101,7 +192,8 @@ static void loading_tick(void *context) {
   LoadingData *data = layer_get_data(layer);
   data->frame++;
   layer_mark_dirty(layer);
-  data->timer = app_timer_register(UI_LOADING_FRAME_MS, loading_tick, layer);
+  data->timer =
+      app_timer_register(LOADING_SHARD_FRAME_MS, loading_tick, layer);
 }
 
 Layer *ui_loading_layer_create(GRect frame) {
@@ -109,6 +201,17 @@ Layer *ui_loading_layer_create(GRect frame) {
   LoadingData *data = layer_get_data(layer);
   data->timer = NULL;
   data->frame = 0;
+
+  // half the shorter side, so the shard fits round displays too
+  data->size = (frame.size.w < frame.size.h ? frame.size.w : frame.size.h) / 2;
+  data->origin = GPoint((frame.size.w - data->size) / 2,
+                        (frame.size.h - data->size) / 2);
+  for (int i = 0; i < SHARD_NUM_POINTS; i++) {
+    data->points[i] = shard_point(data, SHARD_POINTS[i]);
+  }
+  GPathInfo info = {.num_points = SHARD_NUM_POINTS, .points = data->points};
+  data->path = gpath_create(&info);
+
   layer_set_update_proc(layer, loading_update);
   layer_set_hidden(layer, true);
   return layer;
@@ -119,7 +222,8 @@ void ui_loading_layer_set_active(Layer *layer, bool active) {
   layer_set_hidden(layer, !active);
   if (active && !data->timer) {
     data->frame = 0;
-    data->timer = app_timer_register(UI_LOADING_FRAME_MS, loading_tick, layer);
+    data->timer =
+        app_timer_register(LOADING_SHARD_FRAME_MS, loading_tick, layer);
   } else if (!active && data->timer) {
     app_timer_cancel(data->timer);
     data->timer = NULL;
@@ -128,6 +232,7 @@ void ui_loading_layer_set_active(Layer *layer, bool active) {
 
 void ui_loading_layer_destroy(Layer *layer) {
   ui_loading_layer_set_active(layer, false);
+  gpath_destroy(((LoadingData *)layer_get_data(layer))->path);
   layer_destroy(layer);
 }
 

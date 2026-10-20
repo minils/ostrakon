@@ -27,5 +27,5 @@ void list_window_set_status(ListWindow *list, const char *status);
 // Shows a title bar above the rows; set before pushing the window
 void list_window_set_title(ListWindow *list, const char *title);
 
-// Shows animated loading dots instead of the status or after the rows
+// Shows the loading shard instead of the status, or loading dots after the rows
 void list_window_set_loading(ListWindow *list, bool loading);

@@ -228,14 +228,17 @@ require(path.join(__dirname, '..', 'src', 'pkjs', 'index.js'));
 let reqId = 0;
 // What the Clay settings page sends back when it is saved
 function clayResponse(s) {
-  return encodeURIComponent(JSON.stringify({
+  const values = {
     SETTING_URL: {value: s.url},
     SETTING_TOKEN: {value: s.token},
     SETTING_TAGS: {value: s.tags || ''},
     SETTING_TODO_TAG: {value: s.todoTag || ''},
     VIBRATE: {value: s.vibrate !== false},
     SETTING_LANGUAGE: {value: s.language || 'auto'}
-  }));
+  };
+  // the rows of keywords come as JSON
+  if (s.keywords) values.SETTING_KEYWORDS = {value: JSON.stringify(s.keywords)};
+  return encodeURIComponent(JSON.stringify(values));
 }
 
 // List items arrive packed into few messages; unpack them into one object
@@ -672,6 +675,7 @@ setTimeout(() => {
     token: 'tok',
     tags: '',
     todoTag: '#home',
+    keywords: null,
     vibrate: true,
     language: 'auto'
   });
@@ -767,6 +771,71 @@ setTimeout(() => {
         openedUrls.pop().replace(/^data:text\/html;charset=utf-8,/, ''));
     assert.ok(page.includes(l.page), l.language);
   }
+
+  // keywords: the settings page is filled with those of its language
+  store.ostrakon_settings = JSON.stringify({...good, language: 'en'});
+  listeners.showConfiguration({});
+  let settingsPage = decodeURIComponent(openedUrls.pop());
+  assert.ok(settingsPage.includes('title medium'));
+  assert.ok(!settingsPage.includes('Kontrollk'));
+  const englishDefaults = [
+    {word: 'check box', markdown: '- [ ]'},
+    {word: 'checkbox', markdown: '- [ ]'}, {word: 'new line', markdown: '\\n'},
+    {word: 'title big', markdown: '#'}, {word: 'title medium', markdown: '##'},
+    {word: 'title small', markdown: '###'}
+  ];
+  // saved unchanged, they are not stored, and all languages keep working
+  listeners.webviewclosed(
+      {response: clayResponse({...good, keywords: englishDefaults})});
+  await new Promise(res => setTimeout(res, 100));
+  assert.strictEqual(JSON.parse(store.ostrakon_settings).keywords, null);
+  r = await request(8, 'memos/m4', 'Kontrollkästchen Brot');
+  assert.deepStrictEqual(
+      comments[comments.length - 1], ['memos/m4', {content: '- [ ] Brot'}]);
+
+  // changed, the list is used as it is: whole words only, longer ones
+  // first, "\\n" is a line break, empty rows are dropped
+  const keywords = [
+    ...englishDefaults.filter(
+        k => k.word !== 'checkbox' && k.word !== 'new line'),
+    {word: 'new line', markdown: '\\n\\n'}, {word: 'Quote', markdown: '>'},
+    {word: ' Code ', markdown: '\\n```\\n'},
+    {word: 'quote end', markdown: '\\n'}, {word: 'a.b', markdown: '(x)'},
+    {word: 'broken', markdown: ''}, {word: '', markdown: '#'}
+  ];
+  listeners.webviewclosed({response: clayResponse({...good, keywords})});
+  await new Promise(res => setTimeout(res, 100));
+  assert.deepStrictEqual(
+      JSON.parse(store.ostrakon_settings).keywords,
+      keywords.slice(0, -2).map(
+          k => ({word: k.word.trim(), markdown: k.markdown})));
+  r = await request(
+      1, null,
+      'Quote, To be or not to be quote end title big Plan new line code ' +
+          'let x CODE. Barcode axb a.b check box milk checkbox eggs ' +
+          'Kontrollkästchen');
+  assert.strictEqual(r[0].STATUS, 0);
+  assert.strictEqual(
+      created[created.length - 1].content,
+      '> To be or not to be\n# Plan\n\n\n```\nlet x\n```\nBarcode axb (x) ' +
+          '- [ ] milk checkbox eggs Kontrollkästchen\n\n#pebble');
+  r = await request(8, 'memos/m4', 'Quote Quote good');
+  assert.strictEqual(r[0].STATUS, 0);
+  assert.deepStrictEqual(
+      comments[comments.length - 1], ['memos/m4', {content: '> > good'}]);
+  r = await request(8, 'memos/m4', 'Quote');
+  assert.deepStrictEqual([r[0].STATUS, r[0].TEXT], [1, 'Comment is empty']);
+  listeners.showConfiguration({});
+  settingsPage = decodeURIComponent(openedUrls.pop());
+  assert.ok(settingsPage.includes('quote end'));
+  // all rows removed: no keywords at all
+  listeners.webviewclosed({response: clayResponse({...good, keywords: [{}]})});
+  await new Promise(res => setTimeout(res, 100));
+  assert.deepStrictEqual(JSON.parse(store.ostrakon_settings).keywords, []);
+  r = await request(8, 'memos/m4', 'check box bread');
+  assert.deepStrictEqual(
+      comments[comments.length - 1],
+      ['memos/m4', {content: 'check box bread'}]);
 
   store.ostrakon_settings = JSON.stringify({...good, language: 'auto'});
   const watchInfo = Pebble.getActiveWatchInfo;

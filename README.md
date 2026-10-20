@@ -80,17 +80,32 @@ Some spoken phrases are turned into markdown when a memo is sent:
 | a line break | new line | neue Zeile | nouvelle ligne | nueva línea | nuova riga |
 | the tag `#word` | hashtag *word* | Hashtag *Wort* | hashtag *mot* | hashtag *palabra* | hashtag *parola* |
 
-The keywords of all languages work whatever the language setting.
+These are the defaults. They can be changed under **Spoken Keywords** in the settings, which lists those of the app's language, one row of spoken word and markdown each: rows are added with **+**, removed with **−**, and **Reset** restores the defaults. `\n` in the markdown is a line break. For example *quote* with `>` turns "quote" into a quote, and *code* with `` \n```\n `` starts or ends a code block. Keywords only match whole words (so "code" leaves "barcode" alone) and are not case-sensitive; longer ones go first. Until the list is changed, the defaults of all languages work; after that, exactly the words in the list. The `hashtag` keyword always works.
 
 ### Settings
 
 Open the app settings in the Pebble app on your phone:
+
+<table>
+  <tr>
+    <th>Connection</th>
+    <th>Memos</th>
+    <th>Watch</th>
+  </tr>
+  <tr valign="top">
+    <td><img src="store/settings/en-1-connection.png" alt="Connection settings" width="200"></td>
+    <td><img src="store/settings/en-2-memos.png" alt="Memos settings with the spoken keywords" width="200"></td>
+    <td><img src="store/settings/en-3-watch.png" alt="Watch settings" width="200"></td>
+  </tr>
+</table>
+
 
 * **Memos Server URL**, e.g. `https://memos.example.com`
 * **Access Token**, created in the Memos settings
 * **Test connection** checks URL and token. After saving, the watch also shows whether the connection works.
 * **Default Tags** added to every new memo, e.g. `#pebble`
 * **To-do Tag** whose open tasks the app glance counts, `#todo` by default
+* **Spoken Keywords**: the spoken words for markdown, see *Spoken keywords*
 * **Vibrate** on success and errors
 * **Language**: automatic (the watch language), English, Deutsch, Français, Español or Italiano
 
@@ -100,6 +115,7 @@ The app has two parts: the watch app in C (`src/c`) and the phone part in Pebble
 
 * Build with the [Pebble SDK](https://developer.repebble.com): `pebble build`
 * Run the phone-side tests against a mock Memos server: `node test/pkjs.test.js`
+* Screenshots of the settings page for this README: `node store/settings_screenshots.js` (needs [Playwright](https://playwright.dev) with Chromium)
 * Translations: the watch texts are in `resources/lang/*.txt` (one file per language, loaded only for the language in use), the phone texts and the settings page in `src/pkjs/i18n.js`. Check the watch translations with `node test/i18n.test.js`.
 * Sources are formatted with `clang-format` in Google style (see `.clang-format`); CI checks this
 * The settings page is built with [Clay](https://github.com/pebble/clay) (MIT license), included in `src/pkjs/vendor`

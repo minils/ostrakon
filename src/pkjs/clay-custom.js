@@ -18,6 +18,8 @@ module.exports = function() {
     var input = root.querySelector('.input');
     input.style.display = 'none';
     var list = document.createElement('div');
+    // indented like the label and the inputs of the other items
+    list.style.padding = '0 0.75rem 0.7rem';
     root.insertBefore(list, root.querySelector('.description'));
 
     function button(text, title) {
@@ -47,13 +49,15 @@ module.exports = function() {
       row.className = 'keyword-row';
       row.style.display = 'flex';
       row.style.marginTop = '0.7rem';
-      [[t.keywordWord, keyword.word], [t.keywordMarkdown, keyword.markdown]]
+      // the markdown is mostly short, so the word gets more room
+      [[t.keywordWord, keyword.word, '3'],
+       [t.keywordMarkdown, keyword.markdown, '2']]
           .forEach(function(field) {
             var input = document.createElement('input');
             input.type = 'text';
             input.placeholder = field[0] || '';
             input.value = field[1] || '';
-            input.style.flex = '1';
+            input.style.flex = field[2];
             input.style.minWidth = '0';
             input.style.marginRight = '0.5rem';
             input.addEventListener('input', save);

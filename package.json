@@ -92,16 +92,6 @@
         "name": "ICON_ERROR",
         "file": "icons/Pebble_80x80_Generic_warning.pdc",
         "targetPlatforms": ["emery", "gabbro"]
-      }, {
-        "type": "raw",
-        "name": "ICON_CACHE",
-        "file": "icons/Ostrakon_50x50_Cache.pdc",
-        "targetPlatforms": ["basalt", "chalk", "diorite", "flint"]
-      }, {
-        "type": "raw",
-        "name": "ICON_CACHE",
-        "file": "icons/Ostrakon_80x80_Cache.pdc",
-        "targetPlatforms": ["emery", "gabbro"]
       }]
     }
   }

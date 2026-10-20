@@ -22,6 +22,13 @@ module.exports = function() {
     list.style.padding = '0 0.75rem 0.7rem';
     root.insertBefore(list, root.querySelector('.description'));
 
+    // accents in Clay's orange: the markdown and the field being edited
+    var style = document.createElement('style');
+    style.textContent = '.keyword-row .keyword-markdown { color: #ff4700; ' +
+        'font-family: monospace; }' +
+        '.keyword-row input:focus { box-shadow: inset 0 -2px #ff4700; }';
+    root.appendChild(style);
+
     function button(text, title) {
       var b = document.createElement('button');
       b.type = 'button';
@@ -50,11 +57,12 @@ module.exports = function() {
       row.style.display = 'flex';
       row.style.marginTop = '0.7rem';
       // the markdown is mostly short, so the word gets more room
-      [[t.keywordWord, keyword.word, '3'],
-       [t.keywordMarkdown, keyword.markdown, '2']]
+      [[t.keywordWord, keyword.word, '3', 'keyword-word'],
+       [t.keywordMarkdown, keyword.markdown, '2', 'keyword-markdown']]
           .forEach(function(field) {
             var input = document.createElement('input');
             input.type = 'text';
+            input.className = field[3];
             input.placeholder = field[0] || '';
             input.value = field[1] || '';
             input.style.flex = field[2];
@@ -86,6 +94,8 @@ module.exports = function() {
     buttons.style.justifyContent = 'space-between';
     buttons.style.marginTop = '0.7rem';
     var add = button('+', t.keywordAdd || '+');
+    // orange like Clay's save button
+    add.className = 'primary';
     add.addEventListener('click', function() {
       addRow({}).querySelector('input').focus();
     });

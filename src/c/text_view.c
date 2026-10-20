@@ -10,6 +10,11 @@ static int16_t horizontal_inset(GRect bounds) {
   return PBL_IF_ROUND_ELSE(bounds.size.w / 8, 2);
 }
 
+static void offset_changed(ScrollLayer *scroll_layer, void *context) {
+  TextView *view = context;
+  ui_scroll_arrow_update(view->scroll_arrow);
+}
+
 void text_view_create(TextView *view, Window *window, const char *title,
                       const char *font_key, GTextAlignment alignment,
                       ClickConfigProvider click_config_provider) {
@@ -29,12 +34,15 @@ void text_view_create(TextView *view, Window *window, const char *title,
   text_layer_set_font(view->text_layer, fonts_get_system_font(font_key));
 
   view->scroll_layer = scroll_layer_create(scroll_frame);
-  scroll_layer_set_callbacks(view->scroll_layer,
-                             (ScrollLayerCallbacks){
-                                 .click_config_provider = click_config_provider,
-                             });
+  scroll_layer_set_context(view->scroll_layer, view);
+  scroll_layer_set_callbacks(
+      view->scroll_layer, (ScrollLayerCallbacks){
+                              .click_config_provider = click_config_provider,
+                              .content_offset_changed_handler = offset_changed,
+                          });
   scroll_layer_add_child(view->scroll_layer,
                          text_layer_get_layer(view->text_layer));
+  view->scroll_arrow = ui_scroll_arrow_create(view->scroll_layer);
   scroll_layer_set_click_config_onto_window(view->scroll_layer, window);
   layer_add_child(root, scroll_layer_get_layer(view->scroll_layer));
 
@@ -47,6 +55,7 @@ void text_view_create(TextView *view, Window *window, const char *title,
 void text_view_destroy(TextView *view) {
   layer_destroy(view->select_hint);
   layer_destroy(view->title_bar);
+  layer_destroy(view->scroll_arrow);
   text_layer_destroy(view->text_layer);
   scroll_layer_destroy(view->scroll_layer);
 }
@@ -72,4 +81,5 @@ void text_view_set_text(TextView *view, const char *text) {
   scroll_layer_set_content_size(view->scroll_layer,
                                 GSize(bounds.size.w, content_height));
   scroll_layer_set_content_offset(view->scroll_layer, GPointZero, false);
+  ui_scroll_arrow_update(view->scroll_arrow);
 }

@@ -41,6 +41,7 @@ typedef struct {
 struct MemoView {
   ScrollLayer *scroll_layer;
   Layer *content_layer;
+  Layer *scroll_arrow;
   MemoViewEdgeHandler edge_handler;
   void *context;
   Block blocks[MAX_BLOCKS];
@@ -203,6 +204,7 @@ static void layout(MemoView *view, int anchor, int16_t anchor_y) {
   scroll_layer_set_content_offset(view->scroll_layer, offset, false);
   view->relayout = false;
   view->last_top = -scroll_layer_get_content_offset(view->scroll_layer).y;
+  ui_scroll_arrow_update(view->scroll_arrow);
   layer_mark_dirty(view->content_layer);
 }
 
@@ -338,6 +340,7 @@ void memo_view_check_edge(MemoView *view, bool at_end) {
 
 static void offset_changed(ScrollLayer *scroll_layer, void *context) {
   MemoView *view = context;
+  ui_scroll_arrow_update(view->scroll_arrow);
   int16_t top = -scroll_layer_get_content_offset(scroll_layer).y;
   if (view->relayout || top == view->last_top) {
     return;
@@ -405,12 +408,14 @@ MemoView *memo_view_create(Layer *parent, GRect frame,
   layer_set_update_proc(view->content_layer, content_update);
 
   scroll_layer_add_child(view->scroll_layer, view->content_layer);
+  view->scroll_arrow = ui_scroll_arrow_create(view->scroll_layer);
   layer_add_child(parent, scroll_layer_get_layer(view->scroll_layer));
   return view;
 }
 
 void memo_view_destroy(MemoView *view) {
   memo_view_set_loading(view, false);
+  layer_destroy(view->scroll_arrow);
   layer_destroy(view->content_layer);
   scroll_layer_destroy(view->scroll_layer);
   free(view);

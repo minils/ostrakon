@@ -6,6 +6,7 @@ typedef struct {
   Layer *title_bar;
   ScrollLayer *scroll_layer;
   TextLayer *text_layer;
+  Layer *scroll_arrow;
   Layer *select_hint;
 } TextView;
 

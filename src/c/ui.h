@@ -29,6 +29,13 @@ Layer *ui_title_bar_create(GRect window_bounds, const char *title);
 // pressing select does something
 Layer *ui_select_hint_create(GRect window_bounds);
 
+// A small arrow at the bottom of a scroll layer while there is more to
+// scroll down to, as in the system's notifications. It replaces the scroll
+// layer's shadows and goes with the scroll layer; update it when its
+// content offset or size changes.
+Layer *ui_scroll_arrow_create(ScrollLayer *scroll_layer);
+void ui_scroll_arrow_update(Layer *arrow);
+
 // Three dots, one highlighted per animation frame, centered on center.
 // on_highlight draws them for a highlighted menu row.
 void ui_draw_loading_dots(GContext *ctx, GPoint center, int frame,

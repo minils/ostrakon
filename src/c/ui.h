@@ -48,6 +48,7 @@ typedef enum {
   UiStatusInfo,     // e.g. an empty list
   UiStatusNoPhone,  // a warning: the phone is not connected or silent
   UiStatusOffline,  // a warning: the phone cannot reach the server
+  UiStatusCached,   // a warning: the data shown comes from a cache
   UiStatusError,    // a problem to fix, e.g. a rejected token
 } UiStatus;
 

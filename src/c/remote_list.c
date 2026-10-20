@@ -134,7 +134,7 @@ static bool show_cached_items(RemoteList *list) {
       list_window_set_status(list->window, tr(list->empty_text), UiStatusInfo);
     }
     list_window_reload(list->window);
-    toast_show_status(tr("Offline: saved on watch"), UiStatusNoPhone);
+    toast_show_status(tr("Offline: saved on watch"), UiStatusCached);
   }
   free(data);
   return found;
@@ -163,7 +163,7 @@ static void response_handler(DictionaryIterator *iter, void *context) {
   if (count >= 0) {
     // the phone adds a note if the list comes from its offline cache
     if (dict_find(iter, MESSAGE_KEY_TEXT)) {
-      toast_show_status(comm_response_error(iter), UiStatusOffline);
+      toast_show_status(comm_response_error(iter), UiStatusCached);
     }
     int32_t end = list->page_start + count;
     list->expected = end < list->capacity ? end : list->capacity;

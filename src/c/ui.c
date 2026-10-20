@@ -281,6 +281,8 @@ GDrawCommandImage *ui_status_icon_create(UiStatus kind) {
     case UiStatusOffline:
       return gdraw_command_image_create_with_resource(
           RESOURCE_ID_ICON_NO_INTERNET);
+    case UiStatusCached:
+      return gdraw_command_image_create_with_resource(RESOURCE_ID_ICON_CACHE);
     case UiStatusError:
       return gdraw_command_image_create_with_resource(RESOURCE_ID_ICON_ERROR);
     default:
@@ -292,7 +294,8 @@ void ui_draw_status(GContext *ctx, GRect bounds, UiStatus kind,
                     GDrawCommandImage *icon, const char *text) {
   GColor color = STATUS_INFO_COLOR;
   GColor text_color = STATUS_LIGHT_TEXT_COLOR;
-  if (kind == UiStatusNoPhone || kind == UiStatusOffline) {
+  if (kind == UiStatusNoPhone || kind == UiStatusOffline ||
+      kind == UiStatusCached) {
     color = STATUS_WARNING_COLOR;
     text_color = GColorBlack;
   } else if (kind == UiStatusError) {

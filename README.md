@@ -8,6 +8,8 @@ A Pebble watch app for your self-hosted [Memos](https://github.com/usememos/memo
 
 An *ostrakon* is a piece of broken pottery that people in antiquity used to write short notes on, which is also where the app icon comes from.
 
+**Homepage: [minils.de/ostrakon](https://minils.de/ostrakon/)**, with screenshots for every watch and a playground to try the spoken keywords in the browser.
+
 <table>
   <tr>
     <th>Recent</th>
@@ -120,6 +122,7 @@ The app has two parts: the watch app in C (`src/c`) and the phone part in Pebble
 * Sources are formatted with `clang-format` in Google style (see `.clang-format`); CI checks this
 * The settings page is built with [Clay](https://github.com/pebble/clay) (MIT license), included in `src/pkjs/vendor`
 * GitHub Actions runs the tests and builds the app on every push; the `.pbw` can be downloaded from the run's artifacts and installed from the phone.
+* The homepage is in `site/`: plain HTML, CSS and JS without a build step, uploaded by hand. Its images are copies from `store/`, and its keyword playground has a copy of the parser in `src/pkjs/index.js`, so both need updating when those change.
 
 ### License
 

@@ -88,7 +88,7 @@ memos.push({
 const created = [], comments = [];
 let serverDown = false;
 let userRequests = 0;
-// GET requests per path, to tell which answers came from the phone's memory
+// GET requests per path, to check that the server is always asked
 const gets = {};
 const server = http.createServer((req, res) => {
   if (serverDown) return req.socket.destroy();
@@ -271,7 +271,8 @@ function decodeItems(msgs) {
   return items;
 }
 
-function request(action, target, text, offset) {
+// version: of what the watch keeps of the requested page, see cacheVersion
+function request(action, target, text, offset, version) {
   const id = ++reqId;
   const before = received.length;
   listeners.appmessage({
@@ -280,7 +281,8 @@ function request(action, target, text, offset) {
       ACTION: action,
       ITEM_ID: target,
       TEXT: text,
-      ITEM_INDEX: offset
+      ITEM_INDEX: offset,
+      CACHE_VERSION: version
     }
   });
   return new Promise(resolve => {
@@ -290,6 +292,7 @@ function request(action, target, text, offset) {
       if (!head) return;
       const items = decodeItems(msgs);
       if (head.STATUS !== 0 || head.LIST_COUNT === undefined ||
+          head.CACHE_VERSION !== undefined ||
           items.length === head.LIST_COUNT) {
         clearInterval(t);
         resolve([head, ...items]);
@@ -298,6 +301,21 @@ function request(action, target, text, offset) {
   });
 }
 const bytes = s => Buffer.byteLength(s, 'utf8');
+
+// What cache_version in cache.c computes for an entry: FNV-1a of the
+// data, mixed with the flags
+function watchVersion(data, flags) {
+  let h = 0x811c9dc5;
+  for (const b of Buffer.from(data, 'utf8')) h = Math.imul(h ^ b, 16777619);
+  return Math.imul(h ^ (flags & 0xff), 16777619) | 0;
+}
+// What the watch keeps of the first page of a list
+const packedItems = r =>
+    r.slice(1)
+        .map(
+            m => [m.ITEM_ID, m.ITEM_TITLE, m.ITEM_SUBTITLE, m.ITEM_FLAGS].join(
+                '\x1f'))
+        .join('\x1e');
 
 // fail instead of hanging if a request never gets an answer
 setTimeout(() => {
@@ -332,6 +350,23 @@ setTimeout(() => {
   assert.strictEqual(items[2].ITEM_TITLE, 'Title 3');
   console.log('recent ok:', items[0], items[2].ITEM_TITLE);
 
+  // the watch sends the version of the list it keeps; the server is still
+  // asked, but an unchanged list is not sent again
+  // FNV-1a of "a" is 0xe40c292c, then mixed with the flags
+  assert.strictEqual(watchVersion('a', 0), 0x2b24d044 | 0);
+  const recentVersion = watchVersion(packedItems(r), r[0].ITEM_FLAGS);
+  let listGets = gets['/api/v1/memos'];
+  let unchanged = await request(2, null, null, undefined, recentVersion);
+  assert.strictEqual(gets['/api/v1/memos'], listGets + 1);
+  assert.deepStrictEqual(
+      [unchanged.length, unchanged[0].CACHE_VERSION, unchanged[0].ITEMS],
+      [1, recentVersion, undefined]);
+  // an older version gets the whole list
+  r = await request(2, null, null, undefined, recentVersion + 1);
+  assert.deepStrictEqual(
+      [r[0].CACHE_VERSION, r.length, packedItems(r)],
+      [undefined, 21, packedItems([null, ...items])]);
+
   // tags with counts, hierarchical tag counted
   r = await request(3);
   const tags = r.slice(1).map(m => [m.ITEM_ID, m.ITEM_TITLE, m.ITEM_SUBTITLE]);
@@ -351,9 +386,7 @@ setTimeout(() => {
   assert.deepStrictEqual(
       r.slice(1).map(m => [m.ITEM_ID, m.ITEM_TITLE, m.ITEM_SUBTITLE]), tags);
 
-  // by tag: across pages, limited to 20; "proj" also matches "proj/a".
-  // The memos loaded for the tags are used again.
-  const listGets = gets['/api/v1/memos'];
+  // by tag: across pages, limited to 20; "proj" also matches "proj/a"
   r = await request(4, 'work');
   assert.strictEqual(r[0].LIST_COUNT, 20);
   assert.ok(r.slice(1).every(m => +m.ITEM_ID.slice(7) % 3 === 0));
@@ -361,7 +394,6 @@ setTimeout(() => {
   assert.deepStrictEqual(r.slice(1).map(m => m.ITEM_ID), ['memos/p1']);
   r = await request(4, 'nothing');
   assert.strictEqual(r[0].LIST_COUNT, 0);
-  assert.strictEqual(gets['/api/v1/memos'], listGets);
 
   // get: long memos come in pages of at most 1500 bytes, split utf-8 safe;
   // a flag tells that another page follows
@@ -370,9 +402,7 @@ setTimeout(() => {
   assert.ok(bytes(r[0].TEXT) <= 1500 && r[0].TEXT.startsWith('pÜnïcödé 😀'));
   assert.ok(!/�/.test(Buffer.from(r[0].TEXT).toString()));
   assert.strictEqual(r[0].ITEM_FLAGS & 4, 4);
-  // the next pages come from the memo loaded for the first one
   let page1 = await request(5, 'memos/u1', undefined, 1);
-  assert.strictEqual(gets['/api/v1/memos/u1'], 1);
   assert.ok(bytes(page1[0].TEXT) <= 1500);
   assert.strictEqual(page1[0].ITEM_FLAGS & 4, 0);
   assert.strictEqual(
@@ -407,6 +437,27 @@ setTimeout(() => {
     'copen task', 'xdone task', 'bbullet', 'n1. first', 'qquoted', '-',
     'klet x = 1;', 'k- [ ] in code', 'p[pic]', 't#idea #pebble'
   ]);
+
+  // a memo page the watch keeps is not sent again while it is unchanged;
+  // after a change on the server it is
+  r = await request(5, 'memos/md1');
+  const md1Version = watchVersion(r[0].TEXT, r[0].ITEM_FLAGS);
+  const md1Gets = gets['/api/v1/memos/md1'];
+  unchanged = await request(5, 'memos/md1', undefined, 0, md1Version);
+  assert.deepStrictEqual(
+      [
+        unchanged[0].STATUS, unchanged[0].CACHE_VERSION, unchanged[0].TEXT,
+        unchanged[0].ITEM_FLAGS
+      ],
+      [0, md1Version, undefined, r[0].ITEM_FLAGS]);
+  assert.strictEqual(gets['/api/v1/memos/md1'], md1Gets + 1);
+  const md1Memo = memos.find(m => m.name === 'memos/md1');
+  const md1Content = md1Memo.content;
+  md1Memo.content += '\nmore';
+  unchanged = await request(5, 'memos/md1', undefined, 0, md1Version);
+  assert.strictEqual(unchanged[0].CACHE_VERSION, undefined);
+  assert.ok(unchanged[0].TEXT.endsWith('\npmore'));
+  md1Memo.content = md1Content;
 
   // tasks of one memo in document order, ids are memo name and task index;
   // checkboxes in code blocks are not tasks
@@ -464,18 +515,11 @@ setTimeout(() => {
   // archive and delete remove memos from the recent list
   assert.strictEqual((await request(6, 'memos/m1'))[0].STATUS, 0);
   assert.strictEqual((await request(7, 'memos/m2'))[0].STATUS, 0);
-  // after a change the list is loaded again
-  const changedGets = gets['/api/v1/memos'];
   r = await request(2);
   assert.ok(!r.slice(1).some(
       m => m.ITEM_ID === 'memos/m1' || m.ITEM_ID === 'memos/m2'));
-  assert.strictEqual(gets['/api/v1/memos'], changedGets + 1);
   r = await request(7, 'memos/nope');
   assert.deepStrictEqual([r[0].STATUS, r[0].TEXT], [1, 'Server error 404']);
-
-  // answers kept in memory expire, then the server is asked again
-  const realNow = Date.now;
-  Date.now = () => realNow() + 60000;
 
   // without a connection lists and memos come from the cache
   serverDown = true;

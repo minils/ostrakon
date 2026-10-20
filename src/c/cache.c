@@ -231,6 +231,17 @@ bool cache_load(const char *key, int32_t *flags, char *buffer, size_t size) {
   return true;
 }
 
+int32_t cache_version(const char *key) {
+  CacheIndex index;
+  read_index(&index);
+  int i = find(&index, key_hash(key, i18n_language()));
+  if (i < 0) {
+    return 0;
+  }
+  const CacheEntry *entry = &index.entries[i];
+  return (int32_t)((entry->data_hash ^ (uint8_t)entry->flags) * 16777619u);
+}
+
 void cache_remove(const char *key) {
   CacheIndex index;
   read_index(&index);

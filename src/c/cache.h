@@ -18,6 +18,11 @@ bool cache_load(const char *key, int32_t *flags, char *buffer, size_t size);
 
 void cache_remove(const char *key);
 
+// A version of the entry for key that changes with its data and flags, so
+// the phone can answer that the watch already has what it would send; 0
+// if there is no entry. Must match cacheVersion in index.js.
+int32_t cache_version(const char *key);
+
 // Drops the oldest entries until others bytes of other persisted data fit
 // next to the cache
 void cache_make_room(size_t others);

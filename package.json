@@ -38,7 +38,8 @@
       "NOTICE",
       "GLANCE_COUNT",
       "ITEMS",
-      "LANGUAGE"
+      "LANGUAGE",
+      "CACHE_VERSION"
     ],
     "resources": {
       "media": [{

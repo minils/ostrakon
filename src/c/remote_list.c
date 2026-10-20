@@ -82,8 +82,9 @@ static int32_t unpack_items(RemoteList *list, const char *p, int32_t index) {
 }
 
 /* ---------- Cache on the watch ---------- */
-// The first page of a list is kept for when the phone is not connected.
-// Search results are not worth the room.
+// The first page of a list is kept for when the phone is not connected,
+// and so the phone need not send it again if it did not change. Search
+// results are not worth the room.
 
 static bool cache_key(const RemoteList *list, char *key, size_t size) {
   if (list->action == CommActionSearch) {
@@ -93,7 +94,8 @@ static bool cache_key(const RemoteList *list, char *key, size_t size) {
   return true;
 }
 
-// Packs the items that fit into an entry, the same way the phone does
+// Packs the items that fit into an entry, the same way the phone does; the
+// flags tell whether there are more
 static void store_items(RemoteList *list) {
   char key[COMM_ID_SIZE + 8];
   char *data = malloc(CACHE_ENTRY_MAX);
@@ -115,37 +117,53 @@ static void store_items(RemoteList *list) {
                      "%s%s\x1f%s\x1f%s\x1f%s", i > 0 ? "\x1e" : "", item->id,
                      item->title, item->subtitle, flags);
   }
-  cache_store(key, 0, data, size);
+  cache_store(key, list->has_more ? 1 : 0, data, size);
   free(data);
 }
 
-// Shows the first page from the cache; returns false if it has none
-static bool show_cached_items(RemoteList *list) {
+static int32_t cached_version(const RemoteList *list) {
+  char key[COMM_ID_SIZE + 8];
+  return cache_key(list, key, sizeof(key)) ? cache_version(key) : 0;
+}
+
+// Shows the first page from the cache; returns false if it has none. With
+// a version the phone answered that it did not change, so only that
+// version is shown, with "Load more" as before; without, the phone is
+// away.
+static bool show_cached_items(RemoteList *list, int32_t version) {
   char key[COMM_ID_SIZE + 8];
   char *data = malloc(CACHE_ENTRY_MAX + 1);
   int32_t flags;
   bool found = data && cache_key(list, key, sizeof(key)) &&
+               (version == 0 || cache_version(key) == version) &&
                cache_load(key, &flags, data, CACHE_ENTRY_MAX + 1);
   if (found) {
     list->count = unpack_items(list, data, 0);
     list->expected = list->count;
-    list->has_more = false;
+    list->has_more = version != 0 && flags != 0;
     if (list->count == 0) {
       list_window_set_status(list->window, tr(list->empty_text), UiStatusInfo);
     }
     list_window_reload(list->window);
-    toast_show_status(tr("No phone:\nLoading last version"), UiStatusNoPhone);
+    if (version == 0) {
+      toast_show_status(tr("No phone:\nLoading last version"), UiStatusNoPhone);
+    } else {
+      // keeps the entry from being dropped as one of the oldest
+      cache_store(key, flags, data, strlen(data));
+    }
   }
   free(data);
   return found;
 }
+
+static void request_page(RemoteList *list, bool send_version);
 
 static void response_handler(DictionaryIterator *iter, void *context) {
   RemoteList *list = context;
 
   if (!iter) {
     set_loading(list, false);
-    if (list->page_start > 0 || !show_cached_items(list)) {
+    if (list->page_start > 0 || !show_cached_items(list, 0)) {
       show_error(list, tr("No response from phone"), UiStatusNoPhone);
     }
     return;
@@ -164,6 +182,14 @@ static void response_handler(DictionaryIterator *iter, void *context) {
     // the phone adds a note if the list comes from its offline cache
     if (dict_find(iter, MESSAGE_KEY_TEXT)) {
       toast_show_status(comm_response_error(iter), UiStatusOffline);
+    }
+    if (comm_response_unchanged(iter, list->version)) {
+      finish(list);
+      // the entry may have made room for a draft in the meantime
+      if (!show_cached_items(list, list->version)) {
+        request_page(list, false);
+      }
+      return;
     }
     int32_t end = list->page_start + count;
     list->expected = end < list->capacity ? end : list->capacity;
@@ -205,14 +231,16 @@ static void response_handler(DictionaryIterator *iter, void *context) {
   list_window_reload(list->window);
 }
 
-static void request_page(RemoteList *list) {
+static void request_page(RemoteList *list, bool send_version) {
   list->page_start = list->count;
   list->expected = list->count;
+  list->version =
+      send_version && list->page_start == 0 ? cached_version(list) : 0;
   set_loading(list, comm_request_page(
                         list->action, list->target[0] ? list->target : NULL,
                         list->text[0] ? list->text : NULL, list->page_start,
-                        response_handler, list));
-  if (!list->loading && (list->page_start > 0 || !show_cached_items(list))) {
+                        list->version, response_handler, list));
+  if (!list->loading && (list->page_start > 0 || !show_cached_items(list, 0))) {
     show_error(list, tr("Phone not connected"), UiStatusNoPhone);
   }
 }
@@ -238,14 +266,14 @@ void remote_list_load(RemoteList *list, CommAction action, const char *target,
   list->action = action;
   ui_copy_truncated(list->target, target ? target : "", sizeof(list->target));
   ui_copy_truncated(list->text, text ? text : "", sizeof(list->text));
-  request_page(list);
+  request_page(list, true);
 }
 
 void remote_list_load_more(RemoteList *list) {
   if (list->loading || !list->has_more) {
     return;
   }
-  request_page(list);
+  request_page(list, true);
   list_window_reload(list->window);
 }
 

@@ -24,10 +24,11 @@ typedef struct {
   char parent[COMM_ID_SIZE];  // the memo of a comment, empty for a memo
   // COMM_TEXT_SIZE bytes each; the second one only once it is needed
   char *pages[2];
-  int page_blocks[2];  // blocks of each page in the memo view
-  int num_pages;       // pages shown, 0 while a message is shown
-  int first_page;      // number of the first page shown
-  int loading_page;    // page being loaded, or -1
+  int page_blocks[2];       // blocks of each page in the memo view
+  int num_pages;            // pages shown, 0 while a message is shown
+  int first_page;           // number of the first page shown
+  int loading_page;         // page being loaded, or -1
+  int32_t loading_version;  // of its cached copy sent along, or 0
   bool more_below;
   bool has_comments;
 } MemoScreen;
@@ -109,23 +110,38 @@ static void page_failed(MemoScreen *screen, bool at_end, const char *error) {
                      screen->more_below);
 }
 
-// Pages are kept in the cache on the watch for when the phone is away
+// Pages are kept in the cache on the watch for when the phone is away, and
+// so the phone need not send them again if they did not change
 static void cache_key(const MemoScreen *screen, int page, char *key,
                       size_t size) {
   snprintf(key, size, "g%d:%s", page, screen->name);
 }
 
-// Shows a page from the cache; returns false if it has none
-static bool show_cached_page(MemoScreen *screen, int page) {
+static int32_t cached_version(const MemoScreen *screen, int page) {
+  char key[COMM_ID_SIZE + 8];
+  cache_key(screen, page, key, sizeof(key));
+  return cache_version(key);
+}
+
+// Shows a page from the cache; returns false if it has none. With a
+// version the phone answered that it did not change, so only that version
+// is shown; without, the phone is away.
+static bool show_cached_page(MemoScreen *screen, int page, int32_t version) {
   char key[COMM_ID_SIZE + 8];
   cache_key(screen, page, key, sizeof(key));
   char *text = malloc(COMM_TEXT_SIZE);
   int32_t flags = 0;
-  bool found = text && cache_load(key, &flags, text, COMM_TEXT_SIZE);
+  bool found = text && (version == 0 || cache_version(key) == version) &&
+               cache_load(key, &flags, text, COMM_TEXT_SIZE);
   if (found) {
     if (screen->num_pages == 0) {
       screen->has_comments = flags & MEMO_FLAG_HAS_COMMENTS;
+    }
+    if (version == 0 && screen->num_pages == 0) {
       toast_show_status(tr("No phone:\nLoading last version"), UiStatusNoPhone);
+    } else if (version != 0) {
+      // keeps the entry from being dropped as one of the oldest
+      cache_store(key, flags, text, strlen(text));
     }
     show_page(screen, page, text, flags & MEMO_FLAG_MORE_TEXT);
   }
@@ -133,16 +149,30 @@ static bool show_cached_page(MemoScreen *screen, int page) {
   return found;
 }
 
+static bool load_page(MemoScreen *screen, int page, bool send_version);
+
 static void content_handler(DictionaryIterator *iter, void *context) {
   MemoScreen *screen = context;
   int page = screen->loading_page;
+  int32_t version = screen->loading_version;
   bool at_end = page > screen->first_page;
   comm_finish();
   set_loading_page(screen, -1);
 
-  if (!iter && show_cached_page(screen, page)) {
+  if (!iter && show_cached_page(screen, page, 0)) {
     memo_view_check_edge(screen->memo_view, page == 0 || at_end);
     return;
+  }
+  if (iter && comm_response_unchanged(iter, version)) {
+    if (show_cached_page(screen, page, version)) {
+      memo_view_check_edge(screen->memo_view, page == 0 || at_end);
+      return;
+    }
+    // the entry may have made room for a draft in the meantime
+    if (load_page(screen, page, false)) {
+      return;
+    }
+    iter = NULL;
   }
   if (!iter || comm_response_failed(iter)) {
     const char *error =
@@ -172,14 +202,15 @@ static void content_handler(DictionaryIterator *iter, void *context) {
 
 // Requests a page, or shows it from the cache if the phone is not
 // connected. Returns false if neither works.
-static bool load_page(MemoScreen *screen, int page) {
+static bool load_page(MemoScreen *screen, int page, bool send_version) {
+  screen->loading_version = send_version ? cached_version(screen, page) : 0;
   if (comm_request_page(CommActionGet, screen->name, NULL, page,
-                        content_handler, screen)) {
+                        screen->loading_version, content_handler, screen)) {
     set_loading_page(screen, page);
     return true;
   }
   bool at_end = screen->num_pages == 0 || page > screen->first_page;
-  if (!show_cached_page(screen, page)) {
+  if (!show_cached_page(screen, page, 0)) {
     return false;
   }
   memo_view_check_edge(screen->memo_view, at_end);
@@ -197,8 +228,10 @@ static void edge_reached(bool at_end, void *context) {
       return;
     }
   }
-  if (!load_page(screen, at_end ? screen->first_page + screen->num_pages
-                                : screen->first_page - 1)) {
+  if (!load_page(screen,
+                 at_end ? screen->first_page + screen->num_pages
+                        : screen->first_page - 1,
+                 true)) {
     page_failed(screen, at_end, tr("Phone not connected"));
   }
 }
@@ -235,7 +268,7 @@ static void comment_click_config_provider(void *context) {
 
 static void load_content(MemoScreen *screen) {
   show_message(screen, "");
-  if (!load_page(screen, 0)) {
+  if (!load_page(screen, 0, true)) {
     show_message(screen, tr("Phone not connected"));
   }
 }

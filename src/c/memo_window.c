@@ -125,7 +125,7 @@ static bool show_cached_page(MemoScreen *screen, int page) {
   if (found) {
     if (screen->num_pages == 0) {
       screen->has_comments = flags & MEMO_FLAG_HAS_COMMENTS;
-      toast_show_status(tr("No phone: loading last version"), UiStatusNoPhone);
+      toast_show_status(tr("No phone:\nLoading last version"), UiStatusNoPhone);
     }
     show_page(screen, page, text, flags & MEMO_FLAG_MORE_TEXT);
   }

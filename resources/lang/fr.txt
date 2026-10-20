@@ -70,7 +70,7 @@ No comments yet = Pas encore de commentaires
 No response from phone = Pas de réponse du téléphone
 Phone not connected = Téléphone non connecté
 Request failed = Échec de la requête
-No phone: loading last version = Pas de téléphone : chargement de la dernière version
+No phone:\nLoading last version = Pas de téléphone :\nChargement de la dernière version
 
 # app glance
 No open todos = Aucune tâche ouverte

@@ -271,6 +271,7 @@ void ui_vibrate(bool success) {
 #define STATUS_WARNING_COLOR PBL_IF_COLOR_ELSE(GColorChromeYellow, GColorWhite)
 #define STATUS_ERROR_COLOR \
   PBL_IF_COLOR_ELSE(GColorDarkCandyAppleRed, GColorWhite)
+#define STATUS_SUCCESS_COLOR PBL_IF_COLOR_ELSE(GColorJaegerGreen, GColorWhite)
 #define STATUS_LIGHT_TEXT_COLOR PBL_IF_COLOR_ELSE(GColorWhite, GColorBlack)
 
 GDrawCommandImage *ui_status_icon_create(UiStatus kind) {
@@ -283,6 +284,8 @@ GDrawCommandImage *ui_status_icon_create(UiStatus kind) {
           RESOURCE_ID_ICON_NO_INTERNET);
     case UiStatusError:
       return gdraw_command_image_create_with_resource(RESOURCE_ID_ICON_ERROR);
+    case UiStatusSuccess:
+      return gdraw_command_image_create_with_resource(RESOURCE_ID_ICON_SUCCESS);
     default:
       return NULL;
   }
@@ -297,6 +300,9 @@ void ui_draw_status(GContext *ctx, GRect bounds, UiStatus kind,
     text_color = GColorBlack;
   } else if (kind == UiStatusError) {
     color = STATUS_ERROR_COLOR;
+  } else if (kind == UiStatusSuccess) {
+    color = STATUS_SUCCESS_COLOR;
+    text_color = GColorBlack;
   }
   graphics_context_set_fill_color(ctx, color);
   graphics_fill_rect(ctx, bounds, 0, GCornerNone);

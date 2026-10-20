@@ -49,6 +49,7 @@ typedef enum {
   UiStatusNoPhone,  // a warning: the phone is not connected or silent
   UiStatusOffline,  // a warning: the phone cannot reach the server
   UiStatusError,    // a problem to fix, e.g. a rejected token
+  UiStatusSuccess,  // a result, e.g. a memo was sent
 } UiStatus;
 
 // The icon PebbleOS shows in its dialogs for the same kind of problem, or

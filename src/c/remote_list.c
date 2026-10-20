@@ -134,7 +134,7 @@ static bool show_cached_items(RemoteList *list) {
       list_window_set_status(list->window, tr(list->empty_text), UiStatusInfo);
     }
     list_window_reload(list->window);
-    toast_show_status(tr("No phone: loading last version"), UiStatusNoPhone);
+    toast_show_status(tr("No phone:\nLoading last version"), UiStatusNoPhone);
   }
   free(data);
   return found;

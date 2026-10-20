@@ -8,6 +8,7 @@ dialogs, from [PebbleOS](https://github.com/coredevices/PebbleOS)
 * `Pebble_*_Watch_disconnected`: the phone is not connected
 * `Pebble_*_Check_internet_connection`: the phone cannot reach the server
 * `Pebble_*_Generic_warning`: other errors
+* `Pebble_*_Generic_confirmation`: a memo, comment or addition was sent
 
 They were converted from SVG to Pebble draw commands (`.pdc`) unchanged,
 with `tools/generate_pdcs/pdc_gen.py` of PebbleOS. The 50x50 icons are

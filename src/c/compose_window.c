@@ -117,10 +117,11 @@ static void send_handler(DictionaryIterator *iter, void *context) {
   }
   // e.g. "Offline: memo queued" when the phone sends it later
   if (dict_find(iter, MESSAGE_KEY_TEXT)) {
-    toast_show(comm_response_error(iter), true);
+    toast_show_status(comm_response_error(iter), UiStatusOffline);
   } else {
-    toast_show(success_message(), true);
+    toast_show_status(success_message(), UiStatusSuccess);
   }
+  ui_vibrate(true);
 }
 
 static void send(void) {

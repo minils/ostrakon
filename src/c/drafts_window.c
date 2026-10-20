@@ -76,6 +76,6 @@ void drafts_window_push(void) {
           .unload = unload,
       },
       NULL);
-  list_window_set_status(s_window, tr("No drafts"));
+  list_window_set_status(s_window, tr("No drafts"), ListStatusInfo);
   list_window_push(s_window);
 }

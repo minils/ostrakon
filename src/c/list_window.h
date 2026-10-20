@@ -22,7 +22,15 @@ ListWindow *list_window_create(ListWindowCallbacks callbacks, void *context);
 void list_window_push(ListWindow *list);
 void list_window_remove(ListWindow *list);
 void list_window_reload(ListWindow *list);
-void list_window_set_status(ListWindow *list, const char *status);
+// What a status text is about; it sets the color of the status
+typedef enum {
+  ListStatusInfo,     // e.g. an empty list
+  ListStatusWarning,  // a problem that may pass, e.g. no connection
+  ListStatusError,    // a problem to fix, e.g. a rejected token
+} ListStatus;
+
+void list_window_set_status(ListWindow *list, const char *status,
+                            ListStatus kind);
 
 // Shows a title bar above the rows; set before pushing the window
 void list_window_set_title(ListWindow *list, const char *title);

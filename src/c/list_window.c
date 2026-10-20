@@ -22,6 +22,10 @@
   PBL_IF_ROUND_ELSE(MENU_CELL_ROUND_FOCUSED_SHORT_CELL_HEIGHT, 44)
 #endif
 #define STATUS_INSET PBL_IF_ROUND_ELSE(16, 5)
+#define STATUS_WARNING_COLOR PBL_IF_COLOR_ELSE(GColorChromeYellow, GColorBlack)
+#define STATUS_WARNING_TEXT_COLOR PBL_IF_COLOR_ELSE(GColorBlack, GColorWhite)
+#define STATUS_ERROR_COLOR \
+  PBL_IF_COLOR_ELSE(GColorDarkCandyAppleRed, GColorBlack)
 // the system fonts leave room above the letters
 #define STATUS_FONT_TOP 6
 
@@ -31,6 +35,7 @@ struct ListWindow {
   ListWindowCallbacks callbacks;
   void *context;
   char status[64];
+  ListStatus status_kind;
   char title[64];
   Layer *title_bar;
   // while loading, an empty list shows animated dots instead of rows and
@@ -120,12 +125,20 @@ static void status_update(Layer *layer, GContext *ctx) {
   }
   // in the middle of the list, like the selected row on round displays
   GRect box = GRect(0, (bounds.size.h - height) / 2, bounds.size.w, height);
-  graphics_context_set_fill_color(ctx, UI_HIGHLIGHT_COLOR);
+  GColor color = UI_HIGHLIGHT_COLOR;
+  GColor text_color = UI_HIGHLIGHT_TEXT_COLOR;
+  if (list->status_kind == ListStatusWarning) {
+    color = STATUS_WARNING_COLOR;
+    text_color = STATUS_WARNING_TEXT_COLOR;
+  } else if (list->status_kind == ListStatusError) {
+    color = STATUS_ERROR_COLOR;
+  }
+  graphics_context_set_fill_color(ctx, color);
   graphics_fill_rect(ctx, box, 0, GCornerNone);
 
   text.origin.y = box.origin.y + (height - size.h - STATUS_FONT_TOP) / 2;
   text.size.h = height;
-  graphics_context_set_text_color(ctx, UI_HIGHLIGHT_TEXT_COLOR);
+  graphics_context_set_text_color(ctx, text_color);
   graphics_draw_text(ctx, list->status, font, text, GTextOverflowModeWordWrap,
                      alignment, NULL);
 }
@@ -285,7 +298,9 @@ void list_window_set_title(ListWindow *list, const char *title) {
   ui_copy_truncated(list->title, title, sizeof(list->title));
 }
 
-void list_window_set_status(ListWindow *list, const char *status) {
+void list_window_set_status(ListWindow *list, const char *status,
+                            ListStatus kind) {
   ui_copy_truncated(list->status, status, sizeof(list->status));
+  list->status_kind = kind;
   list_window_reload(list);
 }

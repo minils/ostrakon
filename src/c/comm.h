@@ -55,6 +55,9 @@ void comm_finish(void);
 bool comm_is_pending(void *context);
 
 bool comm_response_failed(DictionaryIterator *iter);
+// True if the request failed for a reason that may pass by itself, e.g.
+// the server could not be reached (STATUS 2, must match index.js)
+bool comm_response_is_warning(DictionaryIterator *iter);
 const char *comm_response_error(DictionaryIterator *iter);
 int32_t comm_get_int(DictionaryIterator *iter, uint32_t key, int32_t fallback);
 bool comm_copy_string(DictionaryIterator *iter, uint32_t key, char *buffer,

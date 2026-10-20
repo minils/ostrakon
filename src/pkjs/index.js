@@ -589,11 +589,17 @@ function replyOk(req, fields) {
   reply(req, fields);
 }
 
+// STATUS of a failed request (must match comm.h): 2 for a problem that
+// may pass by itself, like the server not being reachable, 1 for others
+var STATUS_ERROR = 1;
+var STATUS_WARNING = 2;
+
 function replyError(req, message) {
   console.log('Ostrakon: Request failed:', message);
-  reply(
-      req,
-      {'STATUS': 1, 'TEXT': truncateUtf8(translate(message), MAX_TITLE_BYTES)});
+  reply(req, {
+    'STATUS': isOfflineError(message) ? STATUS_WARNING : STATUS_ERROR,
+    'TEXT': truncateUtf8(translate(message), MAX_TITLE_BYTES)
+  });
 }
 
 function utf8Length(text) {

@@ -477,12 +477,12 @@ setTimeout(() => {
   assert.deepStrictEqual(
       [r[0].TEXT, r[0].LIST_COUNT], ['Offline: cached memos', 2]);
   r = await request(5, 'memos/unknown');
-  assert.deepStrictEqual([r[0].STATUS, r[0].TEXT], [1, 'Network error']);
+  assert.deepStrictEqual([r[0].STATUS, r[0].TEXT], [2, 'Network error']);
   r = await request(6, 'memos/m3');
-  assert.deepStrictEqual([r[0].STATUS, r[0].TEXT], [1, 'Network error']);
+  assert.deepStrictEqual([r[0].STATUS, r[0].TEXT], [2, 'Network error']);
   localStorage.setItem('ostrakon_cache', '[]');
   r = await request(2);
-  assert.deepStrictEqual([r[0].STATUS, r[0].TEXT], [1, 'Network error']);
+  assert.deepStrictEqual([r[0].STATUS, r[0].TEXT], [2, 'Network error']);
   serverDown = false;
 
   // a NACK is retried and nothing is lost

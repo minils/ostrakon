@@ -16,9 +16,9 @@ static void finish(RemoteList *list) {
 }
 
 // Errors replace the empty list; with items shown they become a toast
-static void show_error(RemoteList *list, const char *error) {
+static void show_error(RemoteList *list, const char *error, ListStatus kind) {
   if (list->count == 0) {
-    list_window_set_status(list->window, error);
+    list_window_set_status(list->window, error, kind);
   } else {
     toast_show(error, false);
     list_window_reload(list->window);
@@ -131,7 +131,8 @@ static bool show_cached_items(RemoteList *list) {
     list->expected = list->count;
     list->has_more = false;
     if (list->count == 0) {
-      list_window_set_status(list->window, tr(list->empty_text));
+      list_window_set_status(list->window, tr(list->empty_text),
+                             ListStatusInfo);
     }
     list_window_reload(list->window);
     toast_show_quiet(tr("Offline: saved on watch"));
@@ -146,13 +147,15 @@ static void response_handler(DictionaryIterator *iter, void *context) {
   if (!iter) {
     set_loading(list, false);
     if (list->page_start > 0 || !show_cached_items(list)) {
-      show_error(list, tr("No response from phone"));
+      show_error(list, tr("No response from phone"), ListStatusWarning);
     }
     return;
   }
   if (comm_response_failed(iter)) {
     finish(list);
-    show_error(list, comm_response_error(iter));
+    show_error(
+        list, comm_response_error(iter),
+        comm_response_is_warning(iter) ? ListStatusWarning : ListStatusError);
     return;
   }
 
@@ -173,7 +176,8 @@ static void response_handler(DictionaryIterator *iter, void *context) {
         store_items(list);
       }
       if (list->count == 0) {
-        list_window_set_status(list->window, tr(list->empty_text));
+        list_window_set_status(list->window, tr(list->empty_text),
+                               ListStatusInfo);
       }
       list_window_reload(list->window);
       return;
@@ -210,7 +214,7 @@ static void request_page(RemoteList *list) {
                         list->text[0] ? list->text : NULL, list->page_start,
                         response_handler, list));
   if (!list->loading && (list->page_start > 0 || !show_cached_items(list))) {
-    show_error(list, tr("Phone not connected"));
+    show_error(list, tr("Phone not connected"), ListStatusWarning);
   }
 }
 
@@ -262,7 +266,8 @@ void remote_list_remove(RemoteList *list, const char *id) {
     list->count--;
     list->expected--;
     if (list->count == 0) {
-      list_window_set_status(list->window, tr(list->empty_text));
+      list_window_set_status(list->window, tr(list->empty_text),
+                             ListStatusInfo);
     }
     list_window_reload(list->window);
     return;

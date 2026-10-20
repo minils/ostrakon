@@ -1,6 +1,8 @@
 #pragma once
 #include <pebble.h>
 
+#include "ui.h"
+
 typedef struct ListWindow ListWindow;
 
 typedef struct {
@@ -22,16 +24,8 @@ ListWindow *list_window_create(ListWindowCallbacks callbacks, void *context);
 void list_window_push(ListWindow *list);
 void list_window_remove(ListWindow *list);
 void list_window_reload(ListWindow *list);
-// What a status text is about; it sets the color and icon of the status
-typedef enum {
-  ListStatusInfo,     // e.g. an empty list
-  ListStatusNoPhone,  // a warning: the phone is not connected or silent
-  ListStatusOffline,  // a warning: the phone cannot reach the server
-  ListStatusError,    // a problem to fix, e.g. a rejected token
-} ListStatus;
-
 void list_window_set_status(ListWindow *list, const char *status,
-                            ListStatus kind);
+                            UiStatus kind);
 
 // Shows a title bar above the rows; set before pushing the window
 void list_window_set_title(ListWindow *list, const char *title);

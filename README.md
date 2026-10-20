@@ -80,9 +80,7 @@ Some spoken phrases are turned into markdown when a memo is sent:
 | a line break | new line | neue Zeile | nouvelle ligne | nueva línea | nuova riga |
 | the tag `#word` | hashtag *word* | Hashtag *Wort* | hashtag *mot* | hashtag *palabra* | hashtag *parola* |
 
-The keywords of all languages work whatever the language setting.
-
-**Own keywords** can be added in the settings, one row of spoken word and markdown each; rows are added with **+** and removed with **−**. `\n` in the markdown is a line break. For example *quote* with `>` turns "quote" into a quote, and *code* with `\n```\n` starts or ends a code block. Own keywords only match whole words (so "code" leaves "barcode" alone), are not case-sensitive and are applied before the built-in ones, so they can also replace them.
+These are the defaults. They can be changed under **Spoken Keywords** in the settings, which lists those of the app's language, one row of spoken word and markdown each: rows are added with **+**, removed with **−**, and **Reset** restores the defaults. `\n` in the markdown is a line break. For example *quote* with `>` turns "quote" into a quote, and *code* with `` \n```\n `` starts or ends a code block. Keywords only match whole words (so "code" leaves "barcode" alone) and are not case-sensitive; longer ones go first. Until the list is changed, the defaults of all languages work; after that, exactly the words in the list. The `hashtag` keyword always works.
 
 ### Settings
 
@@ -93,7 +91,7 @@ Open the app settings in the Pebble app on your phone:
 * **Test connection** checks URL and token. After saving, the watch also shows whether the connection works.
 * **Default Tags** added to every new memo, e.g. `#pebble`
 * **To-do Tag** whose open tasks the app glance counts, `#todo` by default
-* **Own Keywords**: your own spoken words for markdown, see *Spoken keywords*
+* **Spoken Keywords**: the spoken words for markdown, see *Spoken keywords*
 * **Vibrate** on success and errors
 * **Language**: automatic (the watch language), English, Deutsch, Français, Español or Italiano
 

@@ -8,9 +8,10 @@ module.exports = function() {
   // the page strings of the current language, set in index.js
   var t = (clayConfig.meta.userData || {}).strings || {};
 
-  // Own keywords: a row of word and markdown each, added with "+" and
-  // removed with "-". Clay has no such list, so the rows are built here
-  // and kept as JSON in the hidden input of the "keywords" item.
+  // Keywords: a row of word and markdown each, added with "+", removed
+  // with "-", and reset to the defaults of the language. Clay has no such
+  // list, so the rows are built here and kept as JSON in the hidden input
+  // of the "keywords" item.
   function buildKeywordRows() {
     var item = clayConfig.getItemById('keywords');
     var root = item.$element[0];
@@ -69,21 +70,38 @@ module.exports = function() {
       return row;
     }
 
+    function showRows(keywords) {
+      var rows = list.querySelectorAll('.keyword-row');
+      for (var i = 0; i < rows.length; i++) list.removeChild(rows[i]);
+      // one empty row shows what to fill in
+      (keywords.length ? keywords : [{}]).forEach(addRow);
+    }
+
+    var buttons = document.createElement('div');
+    buttons.style.display = 'flex';
+    buttons.style.justifyContent = 'space-between';
+    buttons.style.marginTop = '0.7rem';
     var add = button('+', t.keywordAdd || '+');
-    add.style.marginTop = '0.7rem';
     add.addEventListener('click', function() {
       addRow({}).querySelector('input').focus();
     });
-    list.appendChild(add);
+    var reset = button(t.keywordsReset || 'Reset', t.keywordsReset || 'Reset');
+    reset.addEventListener('click', function() {
+      showRows((clayConfig.meta.userData || {}).defaultKeywords || []);
+      save();
+    });
+    buttons.appendChild(add);
+    buttons.appendChild(reset);
+    list.appendChild(buttons);
+    // rows go above the buttons
+    add = buttons;
 
     var keywords = [];
     try {
       keywords = JSON.parse(item.get() || '[]');
     } catch (e) {
     }
-    // one empty row shows what to fill in
-    if (!keywords.length) keywords = [{}];
-    keywords.forEach(addRow);
+    showRows(keywords);
   }
 
   clayConfig.on(clayConfig.EVENTS.AFTER_BUILD, function() {

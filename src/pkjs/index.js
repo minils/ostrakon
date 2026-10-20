@@ -135,89 +135,94 @@ function compareText(a, b) {
  * Memo parser
  * ========================================================= */
 
-// Spoken phrases and the markdown they stand for, in English, German,
-// French, Spanish and Italian
-var SPOKEN_MARKDOWN = [
-  {
-    phrases: [
-      'check box', 'checkbox', 'kontrollkästchen', 'case à cocher',
-      'casilla de verificación', 'casella di controllo'
-    ],
-    markdown: '- [ ] '
-  },
-  {
-    phrases: [
-      'new line', 'neue zeile', 'nouvelle ligne', 'nueva línea', 'nuova riga'
-    ],
-    markdown: '\n'
-  },
-  {
-    phrases: [
-      'title big', 'überschrift groß', 'titel groß', 'grand titre',
-      'titre grand', 'título grande', 'titolo grande'
-    ],
-    markdown: '# '
-  },
-  {
-    phrases: [
-      'title medium', 'überschrift mittel', 'titel mittel', 'titre moyen',
-      'título mediano', 'titolo medio'
-    ],
-    markdown: '## '
-  },
-  {
-    phrases: [
-      'title small', 'überschrift klein', 'titel klein', 'petit titre',
-      'titre petit', 'título pequeño', 'titolo piccolo'
-    ],
-    markdown: '### '
-  }
-];
+// Spoken keywords and the markdown they become, per language, as the
+// settings show them: "\n" is a line break. Until the user changes them in
+// the settings, those of all languages work.
+var DEFAULT_KEYWORDS = {
+  en: [
+    {word: 'check box', markdown: '- [ ]'},
+    {word: 'checkbox', markdown: '- [ ]'}, {word: 'new line', markdown: '\\n'},
+    {word: 'title big', markdown: '#'}, {word: 'title medium', markdown: '##'},
+    {word: 'title small', markdown: '###'}
+  ],
+  de: [
+    {word: 'Checkbox', markdown: '- [ ]'},
+    {word: 'Kontrollkästchen', markdown: '- [ ]'},
+    {word: 'neue Zeile', markdown: '\\n'},
+    {word: 'Überschrift groß', markdown: '#'},
+    {word: 'Titel groß', markdown: '#'},
+    {word: 'Überschrift mittel', markdown: '##'},
+    {word: 'Titel mittel', markdown: '##'},
+    {word: 'Überschrift klein', markdown: '###'},
+    {word: 'Titel klein', markdown: '###'}
+  ],
+  fr: [
+    {word: 'case à cocher', markdown: '- [ ]'},
+    {word: 'nouvelle ligne', markdown: '\\n'},
+    {word: 'grand titre', markdown: '#'}, {word: 'titre grand', markdown: '#'},
+    {word: 'titre moyen', markdown: '##'},
+    {word: 'petit titre', markdown: '###'},
+    {word: 'titre petit', markdown: '###'}
+  ],
+  es: [
+    {word: 'casilla de verificación', markdown: '- [ ]'},
+    {word: 'nueva línea', markdown: '\\n'},
+    {word: 'título grande', markdown: '#'},
+    {word: 'título mediano', markdown: '##'},
+    {word: 'título pequeño', markdown: '###'}
+  ],
+  it: [
+    {word: 'casella di controllo', markdown: '- [ ]'},
+    {word: 'nuova riga', markdown: '\\n'},
+    {word: 'titolo grande', markdown: '#'},
+    {word: 'titolo medio', markdown: '##'},
+    {word: 'titolo piccolo', markdown: '###'}
+  ]
+};
 
-// Punctuation the dictation puts after a phrase belongs to the phrase
-var SPOKEN_MARKDOWN_PATTERNS = SPOKEN_MARKDOWN.map(function(entry) {
-  return {
-    regex: new RegExp('(?:' + entry.phrases.join('|') + ')[\\s,.]*', 'gi'),
-    markdown: entry.markdown
-  };
-});
+// The keywords in use: the user's own from the settings, or else the
+// defaults of all languages
+function activeKeywords() {
+  var keywords = (getSettings() || {}).keywords;
+  if (Array.isArray(keywords)) return cleanKeywords(keywords);
+  return Object.keys(DEFAULT_KEYWORDS).reduce(function(all, language) {
+    return all.concat(DEFAULT_KEYWORDS[language]);
+  }, []);
+}
 
-// Own keywords from the settings, a list of {word, markdown}, e.g. "quote"
-// and "> ". "\n" in the markdown is a line break. They only match whole
-// words, so a short one like "code" leaves "barcode" alone, and they are
-// applied before the built-in ones, which they can replace.
-function customKeywordPatterns(keywords) {
-  var patterns = [];
-  cleanKeywords(keywords).forEach(function(keyword) {
-    var phrase = keyword.word;
-    var markdown = keyword.markdown.replace(/\\n/g, '\n');
-    // like the built-in prefixes, the markdown is followed by a space
-    if (markdown.slice(-1) !== '\n') markdown += ' ';
-    var words = phrase.split(/\s+/).map(function(word) {
-      return word.replace(/[.*+?^${}()|[\]\\\/]/g, '\\$&');
-    });
-    // what follows is dropped like after the built-in phrases, but not a
-    // line break an earlier keyword made
-    patterns.push({
-      regex: new RegExp(
-          '(?:' + words.join('\\s+') + ')(?=[\\s,.!?;:]|$)[ \\t,.]*', 'gi'),
-      markdown: markdown
-    });
-  });
-  return patterns;
+// Keywords only match whole words, so a short one like "code" leaves
+// "barcode" alone. Longer ones go first, so "code end" is not taken for
+// "code".
+function keywordPatterns(keywords) {
+  return keywords.slice()
+      .sort(function(a, b) {
+        return b.word.length - a.word.length;
+      })
+      .map(function(keyword) {
+        var markdown = keyword.markdown.replace(/\\n/g, '\n');
+        // a prefix like "#" or "- [ ]" is followed by a space
+        if (markdown.slice(-1) !== '\n') markdown += ' ';
+        var words = keyword.word.split(/\s+/).map(function(word) {
+          return word.replace(/[.*+?^${}()|[\]\\\/]/g, '\\$&');
+        });
+        // punctuation the dictation puts after a keyword belongs to it,
+        // but not a line break an earlier keyword made
+        return {
+          regex: new RegExp(
+              '(?:' + words.join('\\s+') + ')(?=[\\s,.!?;:]|$)[ \\t,.]*', 'gi'),
+          markdown: markdown
+        };
+      });
 }
 
 function applyKeywords(text) {
-  var custom = customKeywordPatterns((getSettings() || {}).keywords);
-  var content = custom.reduce(function(result, pattern) {
-    return result.replace(pattern.regex, function(phrase, offset, all) {
-      var before = offset > 0 ? all.charAt(offset - 1) : ' ';
-      return /[\s,.!?;:]/.test(before) ? pattern.markdown : phrase;
-    });
-  }, text);
-  content = SPOKEN_MARKDOWN_PATTERNS.reduce(function(result, pattern) {
-    return result.replace(pattern.regex, pattern.markdown);
-  }, content);
+  var content =
+      keywordPatterns(activeKeywords()).reduce(function(result, pattern) {
+        return result.replace(pattern.regex, function(phrase, offset, all) {
+          var before = offset > 0 ? all.charAt(offset - 1) : ' ';
+          return /[\s,.!?;:]/.test(before) ? pattern.markdown : phrase;
+        });
+      }, text);
   return content.replace(/[ \t]+\n/g, '\n');
 }
 
@@ -1335,15 +1340,22 @@ Pebble.addEventListener('ready', function() {
 // them, filled from them every time it opens. It is built anew each time,
 // in the language that is current then.
 var clay = null;
+// the language the settings page was built in
+var clayLanguage = 'en';
 
 function createClay() {
   var Clay = require('./vendor/clay');
-  var strings = i18n.pageStrings(currentLanguage());
+  clayLanguage = currentLanguage();
+  var strings = i18n.pageStrings(clayLanguage);
   clay = new Clay(
       require('./clay-config')(strings), require('./clay-custom'),
       {autoHandleEvents: false});
   // Clay only fills meta on "ready", which it does not handle here
-  clay.meta.userData = {strings: strings};
+  clay.meta.userData = {
+    strings: strings,
+    // what the reset button of the keywords restores
+    defaultKeywords: DEFAULT_KEYWORDS[clayLanguage]
+  };
   return clay;
 }
 
@@ -1352,7 +1364,7 @@ function clayValue(settings, key) {
   return item !== null && typeof item === 'object' ? item.value : item;
 }
 
-// Own keywords without empty rows, as the settings store them
+// Keywords without empty rows, as the settings store them
 function cleanKeywords(keywords) {
   return (Array.isArray(keywords) ? keywords : [])
       .map(function(keyword) {
@@ -1366,13 +1378,19 @@ function cleanKeywords(keywords) {
       });
 }
 
-// The settings page keeps the rows of own keywords as JSON in one field
+// The settings page keeps the rows of keywords as JSON in one field. If
+// they are the defaults of the page's language, null is stored, so the
+// defaults of all languages keep working and follow a language change.
 function parseKeywords(value) {
+  var keywords;
+  if (!value) return null;
   try {
-    return cleanKeywords(JSON.parse(value || '[]'));
+    keywords = cleanKeywords(JSON.parse(value));
   } catch (e) {
-    return [];
+    return null;
   }
+  var defaults = JSON.stringify(DEFAULT_KEYWORDS[clayLanguage]);
+  return JSON.stringify(keywords) === defaults ? null : keywords;
 }
 
 Pebble.addEventListener('showConfiguration', function() {
@@ -1384,7 +1402,9 @@ Pebble.addEventListener('showConfiguration', function() {
     'SETTING_TAGS': current.tags !== undefined ? current.tags :
                                                  DEFAULT_TAGS.join(' '),
     'SETTING_TODO_TAG': current.todoTag || '#' + DEFAULT_TODO_TAG,
-    'SETTING_KEYWORDS': JSON.stringify(cleanKeywords(current.keywords)),
+    'SETTING_KEYWORDS': JSON.stringify(
+        Array.isArray(current.keywords) ? current.keywords :
+                                          DEFAULT_KEYWORDS[clayLanguage]),
     'VIBRATE': current.vibrate !== false,
     'SETTING_LANGUAGE': i18n.settingValue(current.language)
   });

@@ -257,9 +257,10 @@ var PAGE = {
     todoTag: 'To-do Tag',
     todoTagHint:
         'The app launcher shows the open tasks of all memos with this tag.',
-    keywords: 'Own Keywords',
+    keywords: 'Spoken Keywords',
     keywordsHint:
-        'Spoken words and the markdown they become; \\n is a line break. They work like the built-in ones and can replace them.',
+        'Spoken words and the markdown they become; \\n is a line break. The ones of your language are filled in; until you change them, those of the other languages work, too.',
+    keywordsReset: 'Reset',
     keywordWord: 'Word, e.g. quote',
     keywordMarkdown: 'Markdown, e.g. >',
     keywordAdd: 'Add keyword',
@@ -294,9 +295,10 @@ var PAGE = {
     todoTag: 'Aufgaben-Tag',
     todoTagHint:
         'Der App-Launcher zeigt die offenen Aufgaben aller Memos mit diesem Tag.',
-    keywords: 'Eigene Schlüsselwörter',
+    keywords: 'Gesprochene Schlüsselwörter',
     keywordsHint:
-        'Gesprochene Wörter und das Markdown, zu dem sie werden; \\n ist ein Zeilenumbruch. Sie wirken wie die eingebauten und können sie ersetzen.',
+        'Gesprochene Wörter und das Markdown, zu dem sie werden; \\n ist ein Zeilenumbruch. Die deiner Sprache sind eingetragen; bis du sie änderst, wirken auch die der anderen Sprachen.',
+    keywordsReset: 'Zurücksetzen',
     keywordWord: 'Wort, z. B. Zitat',
     keywordMarkdown: 'Markdown, z. B. >',
     keywordAdd: 'Schlüsselwort hinzufügen',
@@ -330,9 +332,10 @@ var PAGE = {
     todoTag: 'Tag des tâches',
     todoTagHint: 'Le lanceur d\'applications affiche les tâches ouvertes ' +
         'de tous les mémos portant ce tag.',
-    keywords: 'Mots-clés personnels',
+    keywords: 'Mots-clés vocaux',
     keywordsHint:
-        'Mots prononcés et le markdown qu\'ils deviennent ; \\n est un saut de ligne. Ils fonctionnent comme les mots-clés intégrés et peuvent les remplacer.',
+        'Mots prononcés et le markdown qu\'ils deviennent ; \\n est un saut de ligne. Ceux de votre langue sont préremplis ; tant que vous ne les modifiez pas, ceux des autres langues fonctionnent aussi.',
+    keywordsReset: 'Réinitialiser',
     keywordWord: 'Mot, p. ex. citation',
     keywordMarkdown: 'Markdown, p. ex. >',
     keywordAdd: 'Ajouter un mot-clé',
@@ -366,9 +369,10 @@ var PAGE = {
     todoTag: 'Etiqueta de tareas',
     todoTagHint: 'El lanzador de apps muestra las tareas pendientes de ' +
         'todos los memos con esta etiqueta.',
-    keywords: 'Palabras clave propias',
+    keywords: 'Palabras clave habladas',
     keywordsHint:
-        'Palabras habladas y el markdown en que se convierten; \\n es un salto de línea. Funcionan como las integradas y pueden sustituirlas.',
+        'Palabras habladas y el markdown en que se convierten; \\n es un salto de línea. Las de tu idioma ya están puestas; mientras no las cambies, también funcionan las de los otros idiomas.',
+    keywordsReset: 'Restablecer',
     keywordWord: 'Palabra, p. ej. cita',
     keywordMarkdown: 'Markdown, p. ej. >',
     keywordAdd: 'Añadir palabra clave',
@@ -402,9 +406,10 @@ var PAGE = {
     todoTag: 'Tag delle attività',
     todoTagHint: 'Il launcher mostra le attività aperte di tutti i memo ' +
         'con questo tag.',
-    keywords: 'Parole chiave personali',
+    keywords: 'Parole chiave vocali',
     keywordsHint:
-        'Parole pronunciate e il markdown in cui si trasformano; \\n è un a capo. Funzionano come quelle integrate e possono sostituirle.',
+        'Parole pronunciate e il markdown in cui si trasformano; \\n è un a capo. Quelle della tua lingua sono già inserite; finché non le modifichi, funzionano anche quelle delle altre lingue.',
+    keywordsReset: 'Ripristina',
     keywordWord: 'Parola, ad es. citazione',
     keywordMarkdown: 'Markdown, ad es. >',
     keywordAdd: 'Aggiungi parola chiave',

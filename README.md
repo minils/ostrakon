@@ -86,6 +86,20 @@ These are the defaults. They can be changed under **Spoken Keywords** in the set
 
 Open the app settings in the Pebble app on your phone:
 
+<table>
+  <tr>
+    <th>Connection</th>
+    <th>Memos</th>
+    <th>Watch</th>
+  </tr>
+  <tr valign="top">
+    <td><img src="store/settings/en-1-connection.png" alt="Connection settings" width="200"></td>
+    <td><img src="store/settings/en-2-memos.png" alt="Memos settings with the spoken keywords" width="200"></td>
+    <td><img src="store/settings/en-3-watch.png" alt="Watch settings" width="200"></td>
+  </tr>
+</table>
+
+
 * **Memos Server URL**, e.g. `https://memos.example.com`
 * **Access Token**, created in the Memos settings
 * **Test connection** checks URL and token. After saving, the watch also shows whether the connection works.
@@ -101,6 +115,7 @@ The app has two parts: the watch app in C (`src/c`) and the phone part in Pebble
 
 * Build with the [Pebble SDK](https://developer.repebble.com): `pebble build`
 * Run the phone-side tests against a mock Memos server: `node test/pkjs.test.js`
+* Screenshots of the settings page for this README: `node store/settings_screenshots.js` (needs [Playwright](https://playwright.dev) with Chromium)
 * Translations: the watch texts are in `resources/lang/*.txt` (one file per language, loaded only for the language in use), the phone texts and the settings page in `src/pkjs/i18n.js`. Check the watch translations with `node test/i18n.test.js`.
 * Sources are formatted with `clang-format` in Google style (see `.clang-format`); CI checks this
 * The settings page is built with [Clay](https://github.com/pebble/clay) (MIT license), included in `src/pkjs/vendor`

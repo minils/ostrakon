@@ -67,16 +67,17 @@ static void start_dictation(void) { dictation_start(&s_dictation); }
 // can be sent later from the drafts list
 static void phone_unreachable(const char *message) {
   update_display();
+  ui_vibrate(false);
   if (s_mode != ComposeModeMemo) {
-    toast_show(message, false);
+    toast_show_status(message, UiStatusNoPhone);
     return;
   }
   if (drafts_save(s_draft_index, s_message) < 0) {
-    toast_show(tr("Drafts full.\nSend or discard."), false);
+    toast_show_status(tr("Drafts full.\nSend or discard."), UiStatusError);
     return;
   }
   close_window();
-  toast_show(tr("Phone unreachable.\nSaved as draft."), false);
+  toast_show_status(tr("Phone unreachable.\nSaved as draft."), UiStatusNoPhone);
 }
 
 static const char *success_message(void) {

@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ostrakon · Memos on your Pebble</title>
+  <meta name="description" content="Ostrakon is a Pebble watch app for your self-hosted Memos server: dictate new memos, browse and search them, tick off tasks and add comments from your wrist.">
+  <meta name="theme-color" content="#f5eee4" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#16100d" media="(prefers-color-scheme: dark)">
+  <meta property="og:title" content="Ostrakon · Memos on your Pebble">
+  <meta property="og:description" content="Dictate, browse and organize your Memos notes from your wrist.">
+  <meta property="og:image" content="img/icon-144.png">
+  <link rel="icon" type="image/png" href="img/icon-48.png">
+  <link rel="apple-touch-icon" href="img/icon-144.png">
+  <link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="nav" id="top">
+    <div class="wrap nav-inner">
+      <a class="brand" href="#top" aria-label="Ostrakon home">
+        <svg class="shard shard-sm" data-shard="7" viewBox="0 0 25 25" aria-hidden="true"></svg>
+        <span>ostrakon</span>
+      </a>
+      <nav class="nav-links" aria-label="Sections">
+        <a href="#features">features</a>
+        <a href="#playground">playground</a>
+        <a href="#screens">screens</a>
+        <a href="#hack">hack</a>
+      </nav>
+      <div class="nav-actions">
+        <button class="icon-btn" id="term-open" title="Open terminal (press ` )" aria-label="Open terminal">&gt;_</button>
+        <button class="icon-btn" id="theme-toggle" title="Theme" aria-label="Switch theme">
+          <span class="theme-label">auto</span>
+        </button>
+        <a class="gh-btn" href="https://github.com/minils/ostrakon" rel="noopener">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          <span>GitHub</span>
+          <span class="stars" id="gh-stars" hidden></span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- ================= HERO ================= -->
+    <section class="hero">
+      <div class="glyph-field" aria-hidden="true"></div>
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="blink">▍</span>a Pebble app for <a href="https://github.com/usememos/memos" rel="noopener">Memos</a></p>
+          <h1>
+            <svg class="shard shard-hero" data-shard="11" data-animate viewBox="0 0 25 25" aria-hidden="true"></svg>
+            Ostrakon
+          </h1>
+          <p class="lede">Notes scratched onto your wrist. Dictate memos, read them with their markdown, tick off tasks and comment, all on your own self-hosted server.</p>
+
+          <div class="cta">
+            <a class="btn btn-primary" id="dl-btn" href="https://github.com/minils/ostrakon/releases" rel="noopener">
+              <span class="btn-icon" aria-hidden="true">↓</span>
+              <span id="dl-label">Get it from Releases</span>
+            </a>
+            <a class="btn btn-ghost" href="https://github.com/minils/ostrakon" rel="noopener">
+              <span class="btn-icon" aria-hidden="true">⌥</span> Source on GitHub
+            </a>
+          </div>
+          <p class="release-line mono" id="release-line">
+            <span class="dot"></span><span id="release-text">asking GitHub for the latest release…</span>
+          </p>
+
+          <div class="term term-hero" aria-label="Example terminal session">
+            <div class="term-bar"><i></i><i></i><i></i><span>~/pebble — zsh</span></div>
+            <pre class="term-body" id="hero-term"></pre>
+          </div>
+        </div>
+
+        <div class="hero-watch">
+          <div class="watch watch-emery" id="hero-watch">
+            <button class="wbtn wbtn-back" data-act="back" aria-label="Back button: first screen"></button>
+            <button class="wbtn wbtn-up" data-act="up" aria-label="Up button: previous screen"></button>
+            <button class="wbtn wbtn-select" data-act="select" aria-label="Select button: next screen"></button>
+            <button class="wbtn wbtn-down" data-act="down" aria-label="Down button: next screen"></button>
+            <div class="watch-face">
+              <div class="watch-screen">
+                <img id="hero-shot" src="img/screens/emery-1-recent.png" width="200" height="228" alt="Ostrakon on a Pebble Time 2: recent memos">
+              </div>
+            </div>
+            <div class="watch-brand">pebble</div>
+          </div>
+          <p class="watch-caption mono"><span id="hero-caption">recent</span> <span class="muted">· press the buttons, or ↑ ↓</span></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= SPEC STRIP ================= -->
+    <section class="spec" aria-label="Facts">
+      <div class="wrap spec-grid mono">
+        <div><span class="k">platforms</span><span class="v" data-count="6">6</span></div>
+        <div><span class="k">languages</span><span class="v" data-count="5">5</span></div>
+        <div><span class="k">offline drafts</span><span class="v" data-count="3">3</span></div>
+        <div><span class="k">trackers</span><span class="v">0</span></div>
+        <div><span class="k">third parties</span><span class="v">0</span></div>
+        <div><span class="k">license</span><span class="v">MIT</span></div>
+      </div>
+    </section>
+
+    <!-- ================= ETYMOLOGY ================= -->
+    <section class="wrap etym" aria-label="About the name">
+      <div class="dict">
+        <p class="dict-head"><b>ὄστρακον</b> <span class="mono muted">/ˈos.tra.kon/</span> <i>n.</i></p>
+        <p>A piece of broken pottery that people in antiquity used to write short notes on. Cheap, always at hand, good enough for a shopping list. Athenians scratched names on them to vote someone out of town, which is where <i>ostracism</i> comes from.</p>
+        <p class="muted">This app is the 21st-century version: a shard on your wrist that sends what you say straight to <a href="https://usememos.com" rel="noopener">Memos</a>.</p>
+      </div>
+    </section>
+
+    <!-- ================= FEATURES ================= -->
+    <section class="section" id="features">
+      <div class="wrap">
+        <h2 class="h2"><span class="hash">#</span> features</h2>
+        <p class="section-lede">Everything you do with Memos in a hurry, without taking out your phone.</p>
+        <div class="feature-grid">
+          <article class="card">
+            <header class="card-head mono"><span class="c-com">// </span>write<span class="c-fn">()</span></header>
+            <ul class="ticks">
+              <li><b>Dictate</b> a new memo right away, then send, add more or discard.</li>
+              <li><b>Spoken keywords</b> turn into checkboxes, headings, line breaks and tags.</li>
+              <li><b>Drafts</b> stay on the watch (up to three) and work without a phone.</li>
+              <li><b>Offline queue</b>: no internet, no problem, memos go out when you're back.</li>
+              <li><b>Append</b> to a memo or add a <b>comment</b>.</li>
+            </ul>
+          </article>
+          <article class="card">
+            <header class="card-head mono"><span class="c-com">// </span>read<span class="c-fn">()</span></header>
+            <ul class="ticks">
+              <li><b>Recent</b>, <b>Pinned</b> and <b>Tags</b>, 20 per page with <i>Load more</i>.</li>
+              <li><b>Search</b> by voice.</li>
+              <li><b>Markdown rendered</b>: headings, tasks, bullets, quotes, code, tags.</li>
+              <li><b>Long memos</b> load page by page as you scroll.</li>
+              <li><b>Cached</b> on phone and watch, so they open without a connection.</li>
+            </ul>
+          </article>
+          <article class="card">
+            <header class="card-head mono"><span class="c-com">// </span>organize<span class="c-fn">()</span></header>
+            <ul class="ticks">
+              <li><b>Tasks</b>: tick off checkboxes, saved straight to your server.</li>
+              <li><b>Pin</b>, <b>archive</b> and <b>delete</b>, with confirmation.</li>
+              <li><b>App glance</b> counts the open tasks tagged <code>#todo</code>.</li>
+              <li><b>Touch scrolling</b> on watches with a touchscreen.</li>
+              <li>Speaks <b>EN · DE · FR · ES · IT</b>.</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= ARCHITECTURE ================= -->
+    <section class="section section-alt" id="how">
+      <div class="wrap">
+        <h2 class="h2"><span class="hash">#</span> how it works</h2>
+        <p class="section-lede">No cloud in between. Ostrakon talks to exactly one server: yours.</p>
+        <ol class="pipeline mono">
+          <li class="node">
+            <span class="node-tag">watch</span>
+            <b>C app</b>
+            <span class="muted">dictation · drafts · cache</span>
+          </li>
+          <li class="link" aria-hidden="true"><span>AppMessage</span></li>
+          <li class="node">
+            <span class="node-tag">phone</span>
+            <b>PebbleKit JS</b>
+            <span class="muted">keywords · queue · cache</span>
+          </li>
+          <li class="link" aria-hidden="true"><span>HTTPS</span></li>
+          <li class="node node-you">
+            <span class="node-tag">your server</span>
+            <b>Memos API</b>
+            <span class="muted">memos.example.com</span>
+          </li>
+        </ol>
+        <p class="footnote muted">URL and access token are stored on your phone. No tracking, no analytics, no third-party service.</p>
+      </div>
+    </section>
+
+    <!-- ================= PLAYGROUND ================= -->
+    <section class="section" id="playground">
+      <div class="wrap">
+        <h2 class="h2"><span class="hash">#</span> playground</h2>
+        <p class="section-lede">This is the actual keyword parser from <code>src/pkjs/index.js</code>, running in your browser. Type what you'd say to your watch.</p>
+
+        <div class="play">
+          <div class="play-in">
+            <div class="presets" role="group" aria-label="Examples">
+              <button class="chip" data-preset="en">en</button>
+              <button class="chip" data-preset="de">de</button>
+              <button class="chip" data-preset="fr">fr</button>
+              <button class="chip" data-preset="es">es</button>
+              <button class="chip" data-preset="it">it</button>
+              <button class="chip chip-act" id="dictate">◉ dictate</button>
+            </div>
+            <label class="field">
+              <span class="field-label mono">spoken text</span>
+              <textarea id="spoken" rows="5" spellcheck="false"></textarea>
+            </label>
+            <label class="field">
+              <span class="field-label mono">default tags</span>
+              <input id="default-tags" type="text" value="#pebble" spellcheck="false">
+            </label>
+            <div class="field">
+              <span class="field-label mono">→ markdown sent to Memos</span>
+              <pre class="md-out" id="md-out"></pre>
+            </div>
+            <details class="kw-table">
+              <summary class="mono">cat keywords.txt</summary>
+              <div class="table-scroll">
+                <table>
+                  <thead><tr><th>markdown</th><th>en</th><th>de</th><th>fr</th><th>es</th><th>it</th></tr></thead>
+                  <tbody>
+                    <tr><td><code>- [ ]</code></td><td>checkbox</td><td>Checkbox</td><td>case à cocher</td><td>casilla de verificación</td><td>casella di controllo</td></tr>
+                    <tr><td><code>#</code></td><td>title big</td><td>Überschrift groß</td><td>grand titre</td><td>título grande</td><td>titolo grande</td></tr>
+                    <tr><td><code>##</code></td><td>title medium</td><td>Überschrift mittel</td><td>titre moyen</td><td>título mediano</td><td>titolo medio</td></tr>
+                    <tr><td><code>###</code></td><td>title small</td><td>Überschrift klein</td><td>petit titre</td><td>título pequeño</td><td>titolo piccolo</td></tr>
+                    <tr><td><code>\n</code></td><td>new line</td><td>neue Zeile</td><td>nouvelle ligne</td><td>nueva línea</td><td>nuova riga</td></tr>
+                    <tr><td><code>#word</code></td><td>hashtag <i>word</i></td><td>Hashtag <i>Wort</i></td><td>hashtag <i>mot</i></td><td>hashtag <i>palabra</i></td><td>hashtag <i>parola</i></td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="muted small">Keywords are editable in the settings: add your own, like <i>quote</i> → <code>&gt;</code>.</p>
+            </details>
+          </div>
+
+          <div class="play-out">
+            <div class="watch watch-emery watch-mini">
+              <div class="watch-face">
+                <div class="watch-screen pbl" id="pbl">
+                  <div class="pbl-bar">Memo</div>
+                  <div class="pbl-body" id="pbl-body"></div>
+                </div>
+              </div>
+            </div>
+            <p class="watch-caption mono muted">preview, roughly as the watch shows it</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= SCREENS ================= -->
+    <section class="section section-alt" id="screens">
+      <div class="wrap">
+        <h2 class="h2"><span class="hash">#</span> screens</h2>
+        <p class="section-lede">Built for every current Pebble, including the new Core Devices watches.</p>
+        <div class="tabs mono" role="tablist" aria-label="Platform">
+          <button role="tab" class="tab" data-plat="emery" aria-selected="true">emery<small>Pebble Time 2</small></button>
+          <button role="tab" class="tab" data-plat="basalt" aria-selected="false">basalt<small>Time · 2 Duo</small></button>
+          <button role="tab" class="tab" data-plat="chalk" aria-selected="false">chalk<small>Round · Round 2</small></button>
+        </div>
+        <div class="shots" id="shots"></div>
+        <ul class="plat-list mono">
+          <li><b>basalt</b> Pebble Time / Steel</li>
+          <li><b>chalk</b> Pebble Time Round</li>
+          <li><b>diorite</b> Pebble 2</li>
+          <li><b>emery</b> Pebble Time 2</li>
+          <li><b>flint</b> Pebble 2 Duo</li>
+          <li><b>gabbro</b> Pebble Round 2</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ================= SETUP ================= -->
+    <section class="section" id="setup">
+      <div class="wrap">
+        <h2 class="h2"><span class="hash">#</span> install</h2>
+        <div class="setup-grid">
+          <ol class="steps">
+            <li>
+              <span class="step-n mono">01</span>
+              <div><b>Download</b> <code>ostrakon.pbw</code> from the <a href="https://github.com/minils/ostrakon/releases" rel="noopener">GitHub releases</a>.</div>
+            </li>
+            <li>
+              <span class="step-n mono">02</span>
+              <div><b>Open it</b> on your phone with the Pebble app, or push it with <code>pebble install --phone &lt;ip&gt; ostrakon.pbw</code>.</div>
+            </li>
+            <li>
+              <span class="step-n mono">03</span>
+              <div><b>Configure</b>: in the app settings, enter your Memos server URL and an access token from the Memos settings, then hit <i>Test connection</i>.</div>
+            </li>
+            <li>
+              <span class="step-n mono">04</span>
+              <div><b>Talk</b>. Start <i>New</i>, say <i>“checkbox call mom hashtag family”</i>, send.</div>
+            </li>
+          </ol>
+          <div class="settings-shots">
+            <img src="img/settings/en-1-connection.png" alt="Connection settings: server URL, access token, test connection" loading="lazy">
+            <img src="img/settings/en-2-memos.png" alt="Memos settings: default tags, to-do tag, spoken keywords" loading="lazy">
+            <img src="img/settings/en-3-watch.png" alt="Watch settings: vibrate and language" loading="lazy">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= HACK ================= -->
+    <section class="section section-alt" id="hack">
+      <div class="wrap">
+        <h2 class="h2"><span class="hash">#</span> hack on it</h2>
+        <p class="section-lede">Two halves: the watch app in C (<code>src/c</code>) and the phone part in PebbleKit JS (<code>src/pkjs</code>). Pull requests welcome.</p>
+        <div class="hack-grid">
+          <div class="term">
+            <div class="term-bar"><i></i><i></i><i></i><span>build</span>
+              <button class="copy" data-copy="hack-cmds" aria-label="Copy commands">copy</button>
+            </div>
+<pre class="term-body" id="hack-cmds"><span class="t-p">$</span> git clone https://github.com/minils/ostrakon.git
+<span class="t-p">$</span> cd ostrakon
+<span class="t-p">$</span> pebble build
+<span class="t-p">$</span> node test/pkjs.test.js   <span class="t-c"># phone side vs. mock Memos</span>
+<span class="t-p">$</span> node test/i18n.test.js   <span class="t-c"># watch translations</span>
+<span class="t-p">$</span> pebble install --emulator emery</pre>
+          </div>
+          <div class="term">
+            <div class="term-bar"><i></i><i></i><i></i><span>tree -L 2</span></div>
+<pre class="term-body"><span class="t-d">ostrakon/</span>
+├── <span class="t-d">src/</span>
+│   ├── <span class="t-d">c/</span>          <span class="t-c"># watch app in C</span>
+│   └── <span class="t-d">pkjs/</span>       <span class="t-c"># phone side, talks to Memos</span>
+├── <span class="t-d">resources/</span>
+│   └── <span class="t-d">lang/</span>       <span class="t-c"># de · fr · es · it</span>
+├── <span class="t-d">test/</span>
+├── <span class="t-d">store/</span>        <span class="t-c"># icon, banner, screenshots</span>
+└── package.json  <span class="t-c"># uuid 6685e502…</span></pre>
+          </div>
+        </div>
+        <div class="link-row">
+          <a class="btn btn-ghost" href="https://github.com/minils/ostrakon" rel="noopener">Repository</a>
+          <a class="btn btn-ghost" href="https://github.com/minils/ostrakon/releases" rel="noopener">Releases</a>
+          <a class="btn btn-ghost" href="https://github.com/minils/ostrakon/issues" rel="noopener">Issues</a>
+          <a class="btn btn-ghost" href="https://github.com/minils/ostrakon/actions" rel="noopener">CI builds</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot-grid">
+      <div>
+        <a class="brand" href="#top">
+          <svg class="shard shard-sm" data-shard="7" viewBox="0 0 25 25" aria-hidden="true"></svg>
+          <span>ostrakon</span>
+        </a>
+        <p class="muted small">Started as a fork of <a href="https://github.com/erimow/pebble-memos" rel="noopener">pebble-memos</a> by Erik Morris, since rewritten. Thanks for the idea, Erik! Not affiliated with the Memos project.</p>
+      </div>
+      <div class="foot-links mono small">
+        <a href="https://github.com/minils/ostrakon">github</a>
+        <a href="https://github.com/minils/ostrakon/releases">releases</a>
+        <a href="https://github.com/minils/ostrakon/blob/main/LICENSE">MIT license</a>
+        <a href="https://github.com/usememos/memos">memos</a>
+      </div>
+      <p class="foot-note mono small muted">no cookies · no trackers · press <kbd>`</kbd> for a shell · ↑↑↓↓←→←→BA</p>
+    </div>
+  </footer>
+
+  <!-- ================= TERMINAL OVERLAY ================= -->
+  <div class="shell" id="shell" hidden>
+    <div class="shell-win term" role="dialog" aria-modal="true" aria-label="Ostrakon shell">
+      <div class="term-bar"><i></i><i></i><i></i><span>ostrakon-sh</span>
+        <button class="copy" id="shell-close" aria-label="Close shell">esc</button>
+      </div>
+      <div class="term-body shell-body" id="shell-out"></div>
+      <form class="shell-line" id="shell-form" autocomplete="off">
+        <label for="shell-in" class="t-p">memo@pebble:~$</label>
+        <input id="shell-in" type="text" spellcheck="false" autocapitalize="off">
+      </form>
+    </div>
+  </div>
+
+  <canvas id="confetti" aria-hidden="true"></canvas>
+  <script src="js/site.js"></script>
+</body>
+</html>

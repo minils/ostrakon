@@ -172,6 +172,10 @@ bool comm_response_failed(DictionaryIterator *iter) {
   return comm_get_int(iter, MESSAGE_KEY_STATUS, 0) != 0;
 }
 
+bool comm_response_is_warning(DictionaryIterator *iter) {
+  return comm_get_int(iter, MESSAGE_KEY_STATUS, 0) == 2;
+}
+
 const char *comm_response_error(DictionaryIterator *iter) {
   Tuple *tuple = dict_find(iter, MESSAGE_KEY_TEXT);
   if (tuple && tuple->type == TUPLE_CSTRING) {

@@ -252,6 +252,84 @@ void ui_vibrate(bool success) {
   vibes_enqueue_custom_pattern(pattern);
 }
 
+// Status screens
+// The layout of simple_dialog in PebbleOS
+
+#if PBL_DISPLAY_WIDTH >= 200
+#define STATUS_FONT_KEY FONT_KEY_GOTHIC_28
+#define STATUS_ICON_SPACING PBL_IF_ROUND_ELSE(8, 16)
+#else
+#define STATUS_FONT_KEY FONT_KEY_GOTHIC_24_BOLD
+#define STATUS_ICON_SPACING PBL_IF_ROUND_ELSE(2, 4)
+#endif
+#define STATUS_INSET PBL_IF_ROUND_ELSE(16, 6)
+// the system fonts leave room above the letters
+#define STATUS_FONT_TOP 6
+// black and white watches show dialogs black on white, so the black lines
+// of the icons stay visible
+#define STATUS_INFO_COLOR PBL_IF_COLOR_ELSE(UI_HIGHLIGHT_COLOR, GColorWhite)
+#define STATUS_WARNING_COLOR PBL_IF_COLOR_ELSE(GColorChromeYellow, GColorWhite)
+#define STATUS_ERROR_COLOR \
+  PBL_IF_COLOR_ELSE(GColorDarkCandyAppleRed, GColorWhite)
+#define STATUS_SUCCESS_COLOR PBL_IF_COLOR_ELSE(GColorJaegerGreen, GColorWhite)
+#define STATUS_LIGHT_TEXT_COLOR PBL_IF_COLOR_ELSE(GColorWhite, GColorBlack)
+
+GDrawCommandImage *ui_status_icon_create(UiStatus kind) {
+  switch (kind) {
+    case UiStatusNoPhone:
+      return gdraw_command_image_create_with_resource(
+          RESOURCE_ID_ICON_NO_PHONE);
+    case UiStatusOffline:
+      return gdraw_command_image_create_with_resource(
+          RESOURCE_ID_ICON_NO_INTERNET);
+    case UiStatusError:
+      return gdraw_command_image_create_with_resource(RESOURCE_ID_ICON_ERROR);
+    case UiStatusSuccess:
+      return gdraw_command_image_create_with_resource(RESOURCE_ID_ICON_SUCCESS);
+    default:
+      return NULL;
+  }
+}
+
+void ui_draw_status(GContext *ctx, GRect bounds, UiStatus kind,
+                    GDrawCommandImage *icon, const char *text) {
+  GColor color = STATUS_INFO_COLOR;
+  GColor text_color = STATUS_LIGHT_TEXT_COLOR;
+  if (kind == UiStatusNoPhone || kind == UiStatusOffline) {
+    color = STATUS_WARNING_COLOR;
+    text_color = GColorBlack;
+  } else if (kind == UiStatusError) {
+    color = STATUS_ERROR_COLOR;
+  } else if (kind == UiStatusSuccess) {
+    color = STATUS_SUCCESS_COLOR;
+    text_color = GColorBlack;
+  }
+  graphics_context_set_fill_color(ctx, color);
+  graphics_fill_rect(ctx, bounds, 0, GCornerNone);
+
+  GFont font = fonts_get_system_font(STATUS_FONT_KEY);
+  GRect text_box = grect_inset(bounds, GEdgeInsets(0, STATUS_INSET));
+  GSize text_size = graphics_text_layout_get_content_size(
+      text, font, text_box, GTextOverflowModeWordWrap, GTextAlignmentCenter);
+  GSize icon_size =
+      icon ? gdraw_command_image_get_bounds_size(icon) : GSizeZero;
+  int16_t spacing = icon ? STATUS_ICON_SPACING : 0;
+
+  int16_t height = icon_size.h + spacing + text_size.h;
+  int16_t top = bounds.origin.y +
+                (height < bounds.size.h ? (bounds.size.h - height) / 2 : 0);
+  if (icon) {
+    gdraw_command_image_draw(
+        ctx, icon,
+        GPoint(bounds.origin.x + (bounds.size.w - icon_size.w) / 2, top));
+  }
+  text_box.origin.y = top + icon_size.h + spacing - STATUS_FONT_TOP;
+  text_box.size.h = bounds.origin.y + bounds.size.h - text_box.origin.y;
+  graphics_context_set_text_color(ctx, text_color);
+  graphics_draw_text(ctx, text, font, text_box, GTextOverflowModeWordWrap,
+                     GTextAlignmentCenter, NULL);
+}
+
 // Text
 
 void ui_copy_truncated(char *dst, const char *src, size_t dst_size) {

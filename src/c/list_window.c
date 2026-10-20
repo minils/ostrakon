@@ -16,12 +16,15 @@ struct ListWindow {
   ListWindowCallbacks callbacks;
   void *context;
   char status[64];
+  UiStatus status_kind;
+  GDrawCommandImage *status_icon;  // of status_kind, NULL for none
   char title[64];
   Layer *title_bar;
   // while loading, an empty list shows animated dots instead of rows and
   // a filled list gets an extra row with the dots
   bool loading;
   Layer *loading_layer;
+  Layer *status_layer;
   AppTimer *loading_timer;
   int loading_frame;
 };
@@ -33,7 +36,7 @@ static uint16_t get_num_rows(MenuLayer *menu_layer, uint16_t section_index,
   ListWindow *list = data;
   uint16_t count = list->callbacks.get_count(list->context);
   if (count == 0) {
-    return list->loading ? 0 : 1;  // one row for the status text
+    return 0;  // the status layer shows the status text
   }
   return count + (list->loading ? 1 : 0);
 }
@@ -42,10 +45,6 @@ static void draw_row(GContext *ctx, const Layer *cell_layer,
                      MenuIndex *cell_index, void *data) {
   ListWindow *list = data;
   uint16_t count = list->callbacks.get_count(list->context);
-  if (count == 0) {
-    menu_cell_basic_draw(ctx, cell_layer, list->status, NULL, NULL);
-    return;
-  }
   if (cell_index->row >= count) {
     GRect bounds = layer_get_bounds(cell_layer);
     ui_draw_loading_dots(ctx, grect_center_point(&bounds), list->loading_frame,
@@ -88,6 +87,25 @@ static void select_click(MenuLayer *menu_layer, MenuIndex *cell_index,
   }
 }
 
+// Status
+
+// An empty list shows its status over the whole list area, like a Pebble
+// dialog; a one-line menu row would cut longer texts off
+static void status_update(Layer *layer, GContext *ctx) {
+  ListWindow *list = *(ListWindow **)layer_get_data(layer);
+  ui_draw_status(ctx, layer_get_bounds(layer), list->status_kind,
+                 list->status_icon, list->status);
+}
+
+static void update_status_layer(ListWindow *list) {
+  if (list->status_layer) {
+    layer_set_hidden(list->status_layer,
+                     list->loading || !list->status[0] ||
+                         list->callbacks.get_count(list->context) > 0);
+    layer_mark_dirty(list->status_layer);
+  }
+}
+
 // Window
 
 static void window_load(Window *window) {
@@ -123,6 +141,12 @@ static void window_load(Window *window) {
   list->loading_layer = ui_loading_layer_create(menu_frame);
   layer_add_child(root, list->loading_layer);
 
+  list->status_layer = layer_create_with_data(menu_frame, sizeof(ListWindow *));
+  *(ListWindow **)layer_get_data(list->status_layer) = list;
+  layer_set_update_proc(list->status_layer, status_update);
+  layer_add_child(root, list->status_layer);
+  update_status_layer(list);
+
   if (list->title[0]) {
     list->title_bar = ui_title_bar_create(bounds, list->title);
     layer_add_child(root, list->title_bar);
@@ -147,6 +171,11 @@ static void window_unload(Window *window) {
     list->loading_timer = NULL;
   }
   ui_loading_layer_destroy(list->loading_layer);
+  layer_destroy(list->status_layer);
+  if (list->status_icon) {
+    gdraw_command_image_destroy(list->status_icon);
+    list->status_icon = NULL;
+  }
   menu_layer_destroy(list->menu_layer);
   if (list->title_bar) {
     layer_destroy(list->title_bar);
@@ -155,6 +184,7 @@ static void window_unload(Window *window) {
   // the unload callback may still end a request and update the loading
   // state, which must not touch the destroyed layers
   list->loading_layer = NULL;
+  list->status_layer = NULL;
   list->menu_layer = NULL;
   if (list->callbacks.unload) {
     list->callbacks.unload(list->context);
@@ -196,6 +226,7 @@ void list_window_reload(ListWindow *list) {
         list->loading_layer,
         list->loading && list->callbacks.get_count(list->context) == 0);
   }
+  update_status_layer(list);
 }
 
 // animates the dots in the loading row
@@ -225,7 +256,15 @@ void list_window_set_title(ListWindow *list, const char *title) {
   ui_copy_truncated(list->title, title, sizeof(list->title));
 }
 
-void list_window_set_status(ListWindow *list, const char *status) {
+void list_window_set_status(ListWindow *list, const char *status,
+                            UiStatus kind) {
   ui_copy_truncated(list->status, status, sizeof(list->status));
+  if (kind != list->status_kind || !list->status_icon) {
+    if (list->status_icon) {
+      gdraw_command_image_destroy(list->status_icon);
+    }
+    list->status_icon = ui_status_icon_create(kind);
+  }
+  list->status_kind = kind;
   list_window_reload(list);
 }

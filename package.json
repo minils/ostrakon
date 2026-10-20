@@ -62,6 +62,46 @@
         "type": "raw",
         "name": "LANG_IT",
         "file": "lang/it.txt"
+      }, {
+        "type": "raw",
+        "name": "ICON_NO_PHONE",
+        "file": "icons/Pebble_50x50_Watch_disconnected.pdc",
+        "targetPlatforms": ["basalt", "chalk", "diorite", "flint"]
+      }, {
+        "type": "raw",
+        "name": "ICON_NO_PHONE",
+        "file": "icons/Pebble_80x80_Watch_disconnected.pdc",
+        "targetPlatforms": ["emery", "gabbro"]
+      }, {
+        "type": "raw",
+        "name": "ICON_NO_INTERNET",
+        "file": "icons/Pebble_50x50_Check_internet_connection.pdc",
+        "targetPlatforms": ["basalt", "chalk", "diorite", "flint"]
+      }, {
+        "type": "raw",
+        "name": "ICON_NO_INTERNET",
+        "file": "icons/Pebble_80x80_Check_internet_connection.pdc",
+        "targetPlatforms": ["emery", "gabbro"]
+      }, {
+        "type": "raw",
+        "name": "ICON_ERROR",
+        "file": "icons/Pebble_50x50_Generic_warning.pdc",
+        "targetPlatforms": ["basalt", "chalk", "diorite", "flint"]
+      }, {
+        "type": "raw",
+        "name": "ICON_ERROR",
+        "file": "icons/Pebble_80x80_Generic_warning.pdc",
+        "targetPlatforms": ["emery", "gabbro"]
+      }, {
+        "type": "raw",
+        "name": "ICON_SUCCESS",
+        "file": "icons/Pebble_50x50_Generic_confirmation.pdc",
+        "targetPlatforms": ["basalt", "chalk", "diorite", "flint"]
+      }, {
+        "type": "raw",
+        "name": "ICON_SUCCESS",
+        "file": "icons/Pebble_80x80_Generic_confirmation.pdc",
+        "targetPlatforms": ["emery", "gabbro"]
       }]
     }
   }

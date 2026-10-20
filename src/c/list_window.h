@@ -1,6 +1,8 @@
 #pragma once
 #include <pebble.h>
 
+#include "ui.h"
+
 typedef struct ListWindow ListWindow;
 
 typedef struct {
@@ -22,7 +24,8 @@ ListWindow *list_window_create(ListWindowCallbacks callbacks, void *context);
 void list_window_push(ListWindow *list);
 void list_window_remove(ListWindow *list);
 void list_window_reload(ListWindow *list);
-void list_window_set_status(ListWindow *list, const char *status);
+void list_window_set_status(ListWindow *list, const char *status,
+                            UiStatus kind);
 
 // Shows a title bar above the rows; set before pushing the window
 void list_window_set_title(ListWindow *list, const char *title);

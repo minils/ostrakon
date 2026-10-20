@@ -42,6 +42,25 @@ void ui_loading_layer_destroy(Layer *layer);
 
 #define UI_LOADING_FRAME_MS 300
 
+/* ---------- Status screens ---------- */
+// What a status is about; it sets the color and icon of a status screen
+typedef enum {
+  UiStatusInfo,     // e.g. an empty list
+  UiStatusNoPhone,  // a warning: the phone is not connected or silent
+  UiStatusOffline,  // a warning: the phone cannot reach the server
+  UiStatusError,    // a problem to fix, e.g. a rejected token
+  UiStatusSuccess,  // a result, e.g. a memo was sent
+} UiStatus;
+
+// The icon PebbleOS shows in its dialogs for the same kind of problem, or
+// NULL for none. Destroy it with gdraw_command_image_destroy().
+GDrawCommandImage *ui_status_icon_create(UiStatus kind);
+
+// Fills bounds like a Pebble dialog: the color of kind, and the icon and
+// the wrapped text together in the middle
+void ui_draw_status(GContext *ctx, GRect bounds, UiStatus kind,
+                    GDrawCommandImage *icon, const char *text);
+
 // Short, soft vibration if enabled in the settings
 void ui_vibrate(bool success);
 

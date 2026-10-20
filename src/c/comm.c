@@ -53,11 +53,12 @@ static void restart_timeout(void) {
 
 bool comm_request(CommAction action, const char *target, const char *text,
                   CommHandler handler, void *context) {
-  return comm_request_page(action, target, text, -1, handler, context);
+  return comm_request_page(action, target, text, -1, 0, handler, context);
 }
 
 bool comm_request_page(CommAction action, const char *target, const char *text,
-                       int32_t offset, CommHandler handler, void *context) {
+                       int32_t offset, int32_t version, CommHandler handler,
+                       void *context) {
   comm_finish();
 
   // fail right away instead of waiting for the timeout
@@ -81,6 +82,9 @@ bool comm_request_page(CommAction action, const char *target, const char *text,
   }
   if (offset >= 0) {
     dict_write_int32(iter, MESSAGE_KEY_ITEM_INDEX, offset);
+  }
+  if (version != 0) {
+    dict_write_int32(iter, MESSAGE_KEY_CACHE_VERSION, version);
   }
 
   if (app_message_outbox_send() != APP_MSG_OK) {
@@ -176,6 +180,11 @@ bool comm_response_is_warning(DictionaryIterator *iter) {
   return comm_get_int(iter, MESSAGE_KEY_STATUS, 0) == 2;
 }
 
+bool comm_response_unchanged(DictionaryIterator *iter, int32_t version) {
+  return version != 0 &&
+         comm_get_int(iter, MESSAGE_KEY_CACHE_VERSION, 0) == version;
+}
+
 const char *comm_response_error(DictionaryIterator *iter) {
   Tuple *tuple = dict_find(iter, MESSAGE_KEY_TEXT);
   if (tuple && tuple->type == TUPLE_CSTRING) {
@@ -192,7 +201,8 @@ void comm_init(void) {
   // inbox must fit a full memo text, outbox a full dictated message
   uint32_t inbox_size = dict_calc_buffer_size(
       4, sizeof(int32_t), sizeof(int32_t), sizeof(int32_t), COMM_TEXT_SIZE);
-  uint32_t outbox_size = dict_calc_buffer_size(
-      4, sizeof(int32_t), sizeof(int32_t), COMM_ID_SIZE, COMM_MESSAGE_SIZE);
+  uint32_t outbox_size =
+      dict_calc_buffer_size(5, sizeof(int32_t), sizeof(int32_t), COMM_ID_SIZE,
+                            COMM_MESSAGE_SIZE, sizeof(int32_t));
   app_message_open(inbox_size, outbox_size);
 }

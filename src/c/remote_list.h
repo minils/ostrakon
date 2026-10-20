@@ -21,6 +21,7 @@ typedef struct {
   uint16_t page_start;  // index of the first item of the page being loaded
   bool loading;
   bool has_more;
+  int32_t version;  // of the cached first page sent with its request, or 0
   const char *empty_text;
   ListWindow *window;
   // the request, repeated for further pages

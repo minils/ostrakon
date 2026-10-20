@@ -619,6 +619,28 @@ function utf8Length(text) {
   return unescape(encodeURIComponent(text)).length;
 }
 
+// The version of what the watch keeps of a list or memo page: FNV-1a of
+// the text, mixed with the flags. Must match cache_version in cache.c.
+function cacheVersion(text, flags) {
+  function step(hash, byte) {
+    var h = (hash ^ byte) >>> 0;
+    // h * 16777619 modulo 2^32; 16777619 = 2^24 + 403, so it stays exact
+    return ((h << 24) + h * 403) | 0;
+  }
+  var bytes = unescape(encodeURIComponent(text));
+  var hash = 0x811c9dc5 | 0;
+  for (var i = 0; i < bytes.length; i++) {
+    hash = step(hash, bytes.charCodeAt(i));
+  }
+  return step(hash, flags & 0xff);
+}
+
+// True if the watch already has this version, which it sends along with
+// requests for what it keeps
+function watchHas(req, text, flags) {
+  return !!req.version && cacheVersion(text, flags) === req.version;
+}
+
 // One item as "id US title US subtitle US flags"; the separators cannot
 // appear in the fields
 function packItem(item) {
@@ -641,6 +663,15 @@ function replyList(req, items, offline, hasMore) {
     'STATUS': 0
   };
   if (offline) message['TEXT'] = translate('Offline: cached memos');
+
+  // the watch keeps the first page as the items packed the same way, with
+  // whether there are more as flags; if nothing changed, it shows that
+  if (!req.offset &&
+      watchHas(req, items.map(packItem).join('\x1e'), hasMore ? 1 : 0)) {
+    message['CACHE_VERSION'] = req.version;
+    reply(req, message);
+    return;
+  }
   var packed = [];
   var bytes = 0;
 
@@ -690,9 +721,6 @@ function apiRequest(method, path, body, callback) {
     return;
   }
 
-  // a change makes the kept answers outdated, also if it fails half way
-  if (method !== 'GET') clearResponses();
-
   var xhr = new XMLHttpRequest();
   xhr.open(method, apiBase(settings.url) + '/api/v1/' + path, true);
   xhr.setRequestHeader('Content-Type', 'application/json');
@@ -700,7 +728,6 @@ function apiRequest(method, path, body, callback) {
   xhr.timeout = TIMEOUT_MS;
 
   xhr.onload = function() {
-    if (method !== 'GET') clearResponses();
     if (xhr.status < 200 || xhr.status >= 300) {
       callback('Server error ' + xhr.status);
       return;
@@ -724,42 +751,6 @@ function apiRequest(method, path, body, callback) {
   xhr.send(body ? JSON.stringify(body) : null);
 }
 
-// Answers of GET requests are kept for a short time, so going from one
-// list to the next (tags, then a tag, or "Load more") or scrolling through
-// a long memo does not load the same memos again. Any change clears them.
-var RESPONSE_MAX_AGE_MS = 30000;
-var MAX_RESPONSES = 10;
-var responses = [];
-
-function clearResponses() {
-  responses = [];
-}
-
-// Like a GET with apiRequest, but answered from memory if the same request
-// succeeded less than maxAge ago; callback(err, data, fromMemory)
-function cachedGet(path, maxAge, callback) {
-  var settings = getSettings() || {};
-  var key = settings.url + ' ' + settings.token + ' ' + path;
-  var now = Date.now();
-  for (var i = 0; i < responses.length; i++) {
-    if (responses[i].key === key && now - responses[i].time < maxAge) {
-      callback(null, responses[i].data, true);
-      return;
-    }
-  }
-  apiRequest('GET', path, null, function(err, data) {
-    if (!err) {
-      responses = responses
-                      .filter(function(response) {
-                        return response.key !== key;
-                      })
-                      .concat({key: key, time: Date.now(), data: data})
-                      .slice(-MAX_RESPONSES);
-    }
-    callback(err, data, false);
-  });
-}
-
 function filterMemos(memos, accept, limit) {
   var result = [];
   for (var i = 0; i < memos.length && result.length < limit; i++) {
@@ -776,14 +767,12 @@ function filterMemos(memos, accept, limit) {
 // connection the cached memos are used; callback(err, memos, offline).
 function fetchMemos(accept, limit, callback) {
   var fetched = [];
-  // the cache only needs an update if something came from the server
-  var fresh = false;
 
   function fetchPage(pageToken, pagesLeft) {
     var path = 'memos?pageSize=' + PAGE_SIZE +
         (pageToken ? '&pageToken=' + encodeURIComponent(pageToken) : '');
 
-    cachedGet(path, RESPONSE_MAX_AGE_MS, function(err, data, fromMemory) {
+    apiRequest('GET', path, null, function(err, data) {
       if (err) {
         var cached = loadCache();
         if (isOfflineError(err) && cached.length > 0) {
@@ -794,13 +783,12 @@ function fetchMemos(accept, limit, callback) {
         return;
       }
 
-      fresh = fresh || !fromMemory;
       fetched = fetched.concat(data.memos || []);
       var result = filterMemos(fetched, accept, limit);
       if (result.length < limit && data.nextPageToken && pagesLeft > 1) {
         fetchPage(data.nextPageToken, pagesLeft - 1);
       } else {
-        if (fresh) updateCache(fetched, !data.nextPageToken);
+        updateCache(fetched, !data.nextPageToken);
         callback(null, result, false);
       }
     });
@@ -1124,13 +1112,8 @@ function handleListComments(req) {
   });
 }
 
-// A memo is loaded when it is opened; its further pages come from that
-// answer, so the pages fit together and are there right away
-var MEMO_PAGES_MAX_AGE_MS = 600000;
-
 function handleGet(req) {
-  var maxAge = req.offset > 0 ? MEMO_PAGES_MAX_AGE_MS : 0;
-  cachedGet(req.target, maxAge, function(err, memo) {
+  apiRequest('GET', req.target, null, function(err, memo) {
     if (err && isOfflineError(err)) memo = findInCache(req.target);
     if (!memo) {
       replyError(req, err || 'Memo not found');
@@ -1147,12 +1130,16 @@ function handleGet(req) {
       // the watch asks for the next page when it is scrolled to the end
       var pages = pageLines(lines);
       var page = req.offset || 0;
+      var text = pages[page] || '';
       // the flag decides whether the watch offers "Comments"
-      replyOk(req, {
-        'TEXT': pages[page] || '',
-        'ITEM_FLAGS': (hasComments(memo) ? FLAG_HAS_COMMENTS : 0) |
-            (page + 1 < pages.length ? FLAG_MORE_TEXT : 0)
-      });
+      var flags = (hasComments(memo) ? FLAG_HAS_COMMENTS : 0) |
+          (page + 1 < pages.length ? FLAG_MORE_TEXT : 0);
+      // the watch shows the page it keeps if it did not change
+      if (watchHas(req, text, flags)) {
+        replyOk(req, {'ITEM_FLAGS': flags, 'CACHE_VERSION': req.version});
+      } else {
+        replyOk(req, {'TEXT': text, 'ITEM_FLAGS': flags});
+      }
     });
   });
 }
@@ -1345,7 +1332,8 @@ Pebble.addEventListener('appmessage', function(e) {
     action: payload['ACTION'],
     target: payload['ITEM_ID'],  // memo name or tag the request refers to
     text: payload['TEXT'],
-    offset: payload['ITEM_INDEX']  // first item of the requested page
+    offset: payload['ITEM_INDEX'],     // first item of the requested page
+    version: payload['CACHE_VERSION']  // of what the watch keeps of it
   };
 
   var handler = HANDLERS[req.action];

@@ -43,9 +43,12 @@ void comm_init(void);
 bool comm_request(CommAction action, const char *target, const char *text,
                   CommHandler handler, void *context);
 
-// Same for a list request, asking for the page starting at offset
+// Same for a request of a page, starting at offset. With a version of
+// what the watch keeps of that page (see cache_version), the phone answers
+// with it if nothing changed, see comm_response_unchanged; 0 for none.
 bool comm_request_page(CommAction action, const char *target, const char *text,
-                       int32_t offset, CommHandler handler, void *context);
+                       int32_t offset, int32_t version, CommHandler handler,
+                       void *context);
 
 // Stops delivering responses of the pending request
 void comm_finish(void);
@@ -58,6 +61,8 @@ bool comm_response_failed(DictionaryIterator *iter);
 // True if the request failed for a reason that may pass by itself, e.g.
 // the server could not be reached (STATUS 2, must match index.js)
 bool comm_response_is_warning(DictionaryIterator *iter);
+// True if the phone answered that the page of this version did not change
+bool comm_response_unchanged(DictionaryIterator *iter, int32_t version);
 const char *comm_response_error(DictionaryIterator *iter);
 int32_t comm_get_int(DictionaryIterator *iter, uint32_t key, int32_t fallback);
 bool comm_copy_string(DictionaryIterator *iter, uint32_t key, char *buffer,

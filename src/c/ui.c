@@ -52,6 +52,60 @@ Layer *ui_select_hint_create(GRect window_bounds) {
   return layer;
 }
 
+// Scroll arrow, sized and placed like the one of the notifications
+
+#ifdef PBL_ROUND
+#define SCROLL_ARROW_HEIGHT 16
+#else
+#define SCROLL_ARROW_HEIGHT 19
+#endif
+#define SCROLL_ARROW_WIDTH 12
+
+static void scroll_arrow_update(Layer *layer, GContext *ctx) {
+  GRect bounds = layer_get_bounds(layer);
+#ifdef PBL_ROUND
+  int16_t top = bounds.size.h - SCROLL_ARROW_WIDTH / 2 - 8;
+#else
+  // a strip in the background color keeps the text clear of the arrow
+  graphics_context_set_fill_color(ctx, GColorWhite);
+  graphics_fill_rect(ctx, bounds, 0, GCornerNone);
+  int16_t top = 7;
+#endif
+  // a triangle pointing down, one row at a time
+  graphics_context_set_fill_color(ctx, GColorBlack);
+  int16_t left = (bounds.size.w - SCROLL_ARROW_WIDTH) / 2;
+  for (int16_t row = 0; row < SCROLL_ARROW_WIDTH / 2; row++) {
+    graphics_fill_rect(
+        ctx, GRect(left + row, top + row, SCROLL_ARROW_WIDTH - 2 * row, 1), 0,
+        GCornerNone);
+  }
+}
+
+Layer *ui_scroll_arrow_create(ScrollLayer *scroll_layer) {
+  scroll_layer_set_shadow_hidden(scroll_layer, true);
+  Layer *parent = scroll_layer_get_layer(scroll_layer);
+  GRect bounds = layer_get_bounds(parent);
+  Layer *layer =
+      layer_create_with_data(GRect(0, bounds.size.h - SCROLL_ARROW_HEIGHT,
+                                   bounds.size.w, SCROLL_ARROW_HEIGHT),
+                             sizeof(ScrollLayer *));
+  *(ScrollLayer **)layer_get_data(layer) = scroll_layer;
+  layer_set_update_proc(layer, scroll_arrow_update);
+  // above the content, which scrolls below it
+  layer_add_child(parent, layer);
+  ui_scroll_arrow_update(layer);
+  return layer;
+}
+
+void ui_scroll_arrow_update(Layer *arrow) {
+  ScrollLayer *scroll_layer = *(ScrollLayer **)layer_get_data(arrow);
+  int16_t bottom =
+      -scroll_layer_get_content_offset(scroll_layer).y +
+      layer_get_bounds(scroll_layer_get_layer(scroll_layer)).size.h;
+  layer_set_hidden(arrow,
+                   bottom >= scroll_layer_get_content_size(scroll_layer).h);
+}
+
 // Loading animation
 
 #if PBL_DISPLAY_WIDTH >= 200

@@ -18,7 +18,13 @@ static void session_finished(DictationSession *session,
       dictation->handler(text);
     }
   } else if (!is_cancel(status)) {
-    toast_show(tr("Dictation Failed"), false);
+    // like the dictation window of PebbleOS: no connection is a warning,
+    // anything else an error
+    toast_show_status(tr("Dictation Failed"),
+                      status == DictationSessionStatusFailureConnectivityError
+                          ? UiStatusOffline
+                          : UiStatusError);
+    ui_vibrate(false);
   }
 }
 
@@ -27,7 +33,8 @@ void dictation_start(Dictation *dictation) {
     dictation->session =
         dictation_session_create(0, session_finished, dictation);
     if (!dictation->session) {
-      toast_show(tr("Dictation Failed"), false);
+      toast_show_status(tr("Dictation Failed"), UiStatusError);
+      ui_vibrate(false);
       return;
     }
     dictation_session_enable_confirmation(dictation->session,

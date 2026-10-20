@@ -70,7 +70,7 @@ No comments yet = Pas encore de commentaires
 No response from phone = Pas de réponse du téléphone
 Phone not connected = Téléphone non connecté
 Request failed = Échec de la requête
-Offline: saved on watch = Hors ligne : enregistré sur la montre
+No phone: last loaded version = Pas de téléphone : dernière version chargée
 
 # app glance
 No open todos = Aucune tâche ouverte

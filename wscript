@@ -5,6 +5,8 @@
 #
 import os.path
 
+from waflib import Task
+
 top = '.'
 out = 'build'
 
@@ -30,8 +32,31 @@ def configure(ctx):
         env.append_value('LINKFLAGS', ['-Wl,--no-warn-rwx-segments'])
 
 
+def minify_js(ctx):
+    """
+    Makes the SDK's JS bundling also minify the bundle, see tools/minify.js.
+    """
+    merge_js = Task.classes['merge_js']
+    if getattr(merge_js, 'minifies', False):
+        return
+    script = ctx.path.find_node('tools/minify.js').abspath()
+    bundle = merge_js.run
+
+    def run(task):
+        result = bundle(task)
+        if result:
+            return result
+        bld = task.generator.bld
+        return bld.exec_command(['node', script, bld.env.NODE_PATH] +
+                                [node.abspath() for node in task.outputs])
+
+    merge_js.run = run
+    merge_js.minifies = True
+
+
 def build(ctx):
     ctx.load('pebble_sdk')
+    minify_js(ctx)
 
     build_worker = os.path.exists('worker_src')
     binaries = []

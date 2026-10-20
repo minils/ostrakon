@@ -113,8 +113,8 @@ Open the app settings in the Pebble app on your phone:
 
 The app has two parts: the watch app in C (`src/c`) and the phone part in PebbleKit JS (`src/pkjs`), which talks to the Memos API.
 
-* Build with the [Pebble SDK](https://developer.repebble.com): `pebble build`
-* Run the phone-side tests against a mock Memos server: `node test/pkjs.test.js`
+* Build with the [Pebble SDK](https://developer.repebble.com): `pebble build`. The phone-side JS is minified by `tools/minify.js`; the source map keeps stack traces readable.
+* Run the phone-side tests against a mock Memos server: `node test/pkjs.test.js`, or against the built, minified bundle with `PKJS_BUNDLE=build/pebble-js-app.js node test/pkjs.test.js`
 * Screenshots of the settings page for this README: `node store/settings_screenshots.js` (needs [Playwright](https://playwright.dev) with Chromium)
 * Translations: the watch texts are in `resources/lang/*.txt` (one file per language, loaded only for the language in use), the phone texts and the settings page in `src/pkjs/i18n.js`. Check the watch translations with `node test/i18n.test.js`.
 * Sources are formatted with `clang-format` in Google style (see `.clang-format`); CI checks this

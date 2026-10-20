@@ -28,6 +28,7 @@ typedef enum {
   BlockCode,
   BlockRule,
   BlockMeta,
+  BlockTypeCount,
 } BlockType;
 
 typedef struct {
@@ -215,9 +216,14 @@ static void layout_keeping(MemoView *view, int first, int16_t old_y) {
 
 // vertical center of the first text line, for markers
 static int16_t first_line_center(const Block *block) {
-  int16_t line_height = text_height("A", font_for(block->type), 100);
+  // the fonts do not change, so each is measured once
+  static int16_t s_line_heights[BlockTypeCount];
+  int16_t *line_height = &s_line_heights[block->type];
+  if (*line_height == 0) {
+    *line_height = text_height("A", font_for(block->type), 100);
+  }
   // the system fonts have extra space above the letters
-  return block->y + line_height / 2 + 3;
+  return block->y + *line_height / 2 + 3;
 }
 
 static void draw_checkbox(GContext *ctx, const Block *block, int16_t x) {

@@ -54,6 +54,13 @@ jobs:
           pbw=$(ls build/*.pbw)
           if [ "$pbw" != build/ostrakon.pbw ]; then mv "$pbw" build/ostrakon.pbw; fi
 
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Test the minified phone-side JS
+        run: PKJS_BUNDLE=build/pebble-js-app.js node test/pkjs.test.js
+
       - uses: actions/upload-artifact@v7
         with:
           name: Ostrakon

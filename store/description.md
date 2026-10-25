@@ -92,4 +92,4 @@ Ostrakon ist eine unabhängige App für Memos (usememos.com) und gehört nicht z
 * `settings/`: screenshots of the settings page for the README, one per section; regenerate them with `node store/settings_screenshots.js`
 * Screenshots still need to be taken per platform, e.g. with the emulator (`pebble install --emulator emery` and `pebble screenshot`)
 
-Regenerate the graphics with `python3 store/make_art.py store`.
+Regenerate the graphics, and the menu icons in `resources/`, with `python3 store/make_art.py`.

@@ -27,14 +27,16 @@
   }
 
   /* =========================================================
-   * The shard: the same outline as the app icon, with made-up
-   * glyphs scratched into it (a port of store/make_art.py)
+   * The shard: the app icon, in the style of the PebbleOS icons
+   * (a port of store/make_art.py), and made-up glyphs for the
+   * scratched writing behind the hero
    * ========================================================= */
 
   var SVG = 'http://www.w3.org/2000/svg';
-  var SHARD = [[0.5, 7], [4.5, 3.5], [8, 4.2], [12.5, 1.5], [17.5, 3], [24.5, 5],
-               [23, 9.5], [24.5, 13], [21, 17.5], [22, 20.5], [16, 23.5],
-               [13, 21], [8.5, 22.5], [6, 18.5], [2, 17], [3, 12]];
+  var SHARD = [[1.5, 7.5], [5.5, 3.5], [14.5, 3.5], [16.5, 6], [19, 5], [19.5, 7.5],
+               [23, 9], [23, 15], [18, 20.5], [6.5, 20.5], [1.5, 15.5]];
+  var WRITING = [[[5.5, 8], [14, 8]], [[5.5, 11.5], [9, 11.5]], [[11, 11.5], [19, 11.5]],
+                 [[5.5, 15], [12, 15]], [[14, 15], [18, 15]]];
 
   function rng(seed) {  // mulberry32
     return function() {
@@ -78,44 +80,19 @@
     return paths;
   }
 
-  var shardCount = 0;
+  // Thicker lines when small, like the 48px icon. When animated, the
+  // writing is scratched on stroke by stroke.
   function drawShard(svg) {
-    var id = 'sh' + (shardCount++);
-    var seed = parseInt(svg.getAttribute('data-shard'), 10) || 11;
-    var r = rng(seed);
-    var pts = SHARD.map(function(p) { return p.join(','); }).join(' ');
-    var cx = 0, cy = 0;
-    SHARD.forEach(function(p) { cx += p[0]; cy += p[1]; });
-    cx /= SHARD.length; cy /= SHARD.length;
-    var inner = SHARD.map(function(p) {
-      return f(cx + (p[0] - cx) * 0.93) + ',' + f(cy + (p[1] - cy) * 0.93);
-    }).join(' ');
-
-    var ink = [];
-    var lines = [[5.6, [[4.2, 4], [12.6, 4]]], [10.0, [[5.0, 3], [11.4, 4]]], [14.4, [[7.4, 4]]]];
-    lines.forEach(function(line) {
-      line[1].forEach(function(word) {
-        for (var i = 0; i < word[1]; i++) {
-          ink = ink.concat(glyphPaths(r, word[0] + i * 1.85, line[0], 1.55, 2.3));
-        }
-      });
-    });
+    var small = svg.classList.contains('shard-sm');
     var animate = svg.hasAttribute('data-animate');
-    var inkSvg = ink.map(function(d, i) {
-      var style = animate ? ' style="animation-delay:' + (0.35 + i * 0.045).toFixed(3) + 's"' : '';
-      return '<path d="' + d + '" pathLength="1" stroke-width="0.42"' + style + '/>';
+    var pts = SHARD.map(function(p) { return p.join(','); }).join(' ');
+    var ink = WRITING.map(function(line, i) {
+      var style = animate ? ' style="animation-delay:' + (0.35 + i * 0.22).toFixed(2) + 's"' : '';
+      return '<path d="M' + line[0].join(' ') + 'L' + line[1].join(' ') + '" pathLength="1"' + style + '/>';
     }).join('');
-
     svg.innerHTML =
-        '<defs>' +
-        '<radialGradient id="' + id + 'g" cx="0.2" cy="0.15" r="0.75">' +
-        '<stop offset="0" stop-color="#d68054"/><stop offset="1" stop-color="#be623a"/></radialGradient>' +
-        '<clipPath id="' + id + 'c"><polygon points="' + inner + '"/></clipPath>' +
-        '</defs>' +
-        '<polygon points="' + pts + '" fill="#80391e"/>' +
-        '<polygon points="' + inner + '" fill="url(#' + id + 'g)"/>' +
-        '<g clip-path="url(#' + id + 'c)"><g class="ink" transform="rotate(4 12.5 12.5)">' +
-        inkSvg + '</g></g>';
+        '<polygon class="body" points="' + pts + '" stroke-width="' + (small ? 1.8 : 1.4) + '"/>' +
+        '<g class="ink" stroke-width="' + (small ? 1.3 : 1) + '">' + ink + '</g>';
   }
   $$('svg[data-shard]').forEach(drawShard);
 
@@ -477,34 +454,50 @@
     return 'img/screens/' + platform + '-' + (i + 1) + '-' + SCREENS[i][0] + '.png';
   }
 
-  // preload, so the buttons feel instant
-  SCREENS.forEach(function(s, i) { new Image().src = shotSrc('emery', i); });
+  // The watch in the hero runs the app from screenshots: every screen it
+  // can reach in the emulator, with where up, down and select lead
+  // (see store/take_screenshots.py). Back returns to the screen before.
+  var WATCH = window.OSTRAKON_WATCH;
+  var heroScreen = WATCH.start;
+  var heroHistory = [];
 
-  var heroIndex = 0;
-  var heroTimer = null;
-  function showHero(i) {
-    heroIndex = (i + SCREENS.length) % SCREENS.length;
-    var img = $('#hero-shot');
-    img.src = shotSrc('emery', heroIndex);
-    img.alt = 'Ostrakon on a Pebble Time 2: ' + SCREENS[heroIndex][1].toLowerCase();
-    img.classList.remove('swap');
-    void img.offsetWidth;
-    img.classList.add('swap');
-    $('#hero-caption').textContent = (heroIndex + 1) + '/' + SCREENS.length + ' ' + SCREENS[heroIndex][0];
+  function watchSrc(id) { return 'img/watch/' + WATCH.screens[id].i + '.png'; }
+  // the screens one press away, so the buttons feel instant
+  function preloadAround(id) {
+    var next = WATCH.screens[id] || {};
+    ['u', 'd', 's'].forEach(function(k) { if (next[k]) new Image().src = watchSrc(next[k]); });
   }
-  function autoplay(on) {
-    clearInterval(heroTimer);
-    if (on && !reduceMotion) heroTimer = setInterval(function() { showHero(heroIndex + 1); }, 3200);
+  function showScreen(id) {
+    heroScreen = id;
+    $('#hero-shot').src = watchSrc(id);
+    preloadAround(id);
+  }
+  // a little shake where a button does nothing here, e.g. dictation
+  function nudge() {
+    var watch = $('#hero-watch');
+    watch.classList.remove('nudge');
+    void watch.offsetWidth;
+    watch.classList.add('nudge');
+  }
+  function pressButton(act) {
+    var screen = WATCH.screens[heroScreen] || {};
+    if (act === 'back') {
+      if (heroHistory.length) showScreen(heroHistory.pop());
+      else if (heroScreen !== WATCH.launcher) showScreen(WATCH.launcher);  // leaves the app
+      else nudge();
+    } else if (act === 'select') {
+      if (!screen.s) return nudge();
+      if (heroScreen !== WATCH.launcher) heroHistory.push(heroScreen);
+      showScreen(screen.s);
+    } else {
+      var to = screen[act === 'up' ? 'u' : 'd'];
+      if (to && to !== heroScreen) showScreen(to);
+    }
   }
   $$('#hero-watch .wbtn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      autoplay(false);
-      var act = btn.getAttribute('data-act');
-      showHero(act === 'back' ? 0 : act === 'up' ? heroIndex - 1 : heroIndex + 1);
-    });
+    btn.addEventListener('click', function() { pressButton(btn.getAttribute('data-act')); });
   });
-  showHero(0);
-  autoplay(true);
+  showScreen(heroScreen);
 
   /* =========================================================
    * Screens gallery
@@ -707,6 +700,7 @@
   var KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
                 'ArrowLeft', 'ArrowRight', 'b', 'a'];
   var konamiPos = 0;
+  var WATCH_KEYS = {ArrowUp: 'up', ArrowDown: 'down', ArrowRight: 'select', ArrowLeft: 'back'};
 
   document.addEventListener('keydown', function(e) {
     var typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable;
@@ -724,12 +718,11 @@
     if (e.key === '`' || e.key === '~') {
       e.preventDefault();
       openShell();
-    } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    } else if (WATCH_KEYS[e.key]) {
       var rect = $('#hero-watch').getBoundingClientRect();
       if (rect.bottom > 0 && rect.top < window.innerHeight) {
         e.preventDefault();
-        autoplay(false);
-        showHero(heroIndex + (e.key === 'ArrowUp' ? -1 : 1));
+        pressButton(WATCH_KEYS[e.key]);
       }
     }
   });
@@ -742,7 +735,7 @@
     canvas.width = innerWidth * dpr;
     canvas.height = innerHeight * dpr;
     ctx.scale(dpr, dpr);
-    var colors = ['#be623a', '#d68054', '#80391e', '#46200f'];
+    var colors = ['#ff5500', '#ff8a4d', '#111111', '#9a9a9a'];
     var bits = [];
     for (var i = 0; i < 140; i++) {
       var pts = [];

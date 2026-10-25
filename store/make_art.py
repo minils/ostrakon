@@ -15,19 +15,16 @@ BLACK = (0, 0, 0, 255)
 ORANGE = (255, 85, 0, 255)  # GColorOrange, the Pebble orange
 WHITE = (255, 255, 255, 255)
 
-# A shard of pottery with writing scratched onto it and a chip broken off
-# its corner, in a 25x25 grid. src/c/ui.c draws the same shard, twice the
+# A shard of pottery with writing scratched onto it and a broken corner,
+# in a 25x25 grid. src/c/ui.c draws the same shard, twice the
 # size, for the loading animation.
-SHARD = [(1.5, 9.5), (5.5, 5.5), (14.5, 5.5), (16.5, 8), (19, 7), (19.5, 9.5),
-         (23, 11), (23, 17), (18, 22.5), (6.5, 22.5), (1.5, 17.5)]
-CHIP = [(18, 1.5), (21.5, 1), (23, 3.5), (20.5, 4.5)]
-WRITING = [[(5.5, 10), (14, 10)], [(5.5, 13.5), (9, 13.5)], [(11, 13.5), (19, 13.5)],
-           [(5.5, 17), (12, 17)], [(14, 17), (18, 17)]]
-# short lines showing the chip flying off, only drawn at larger sizes
-MOTION = [[(15.5, 3), (16.5, 4)], [(23.8, 6.2), (24.4, 6.6)]]
+SHARD = [(1.5, 7.5), (5.5, 3.5), (14.5, 3.5), (16.5, 6), (19, 5), (19.5, 7.5),
+         (23, 9), (23, 15), (18, 20.5), (6.5, 20.5), (1.5, 15.5)]
+WRITING = [[(5.5, 8), (14, 8)], [(5.5, 11.5), (9, 11.5)], [(11, 11.5), (19, 11.5)],
+           [(5.5, 15), (12, 15)], [(14, 15), (18, 15)]]
 
 
-def draw_shard(size, fill, outline, ink, motion=True, ss=8):
+def draw_shard(size, fill, outline, ink, ss=8):
     """Returns the shard at size x size, drawn ss times larger and scaled
     down for smooth edges. Widths are in units of the 25x25 grid."""
     big = size * ss
@@ -49,14 +46,10 @@ def draw_shard(size, fill, outline, ink, motion=True, ss=8):
         for x, y in points:  # round caps and joins
             di.ellipse([x - r, y - r, x + r, y + r], fill=255)
 
-    for polygon in (SHARD, CHIP):
-        db.polygon(scaled(polygon), fill=255)
-        stroke(polygon, outline, closed=True)
+    db.polygon(scaled(SHARD), fill=255)
+    stroke(SHARD, outline, closed=True)
     for line in WRITING:
         stroke(line, ink)
-    if motion:
-        for line in MOTION:
-            stroke(line, ink * 0.8)
 
     ink_layer = ink_layer.resize((size, size), Image.LANCZOS)
     body = body.resize((size, size), Image.LANCZOS)
@@ -90,9 +83,8 @@ def pixel_shard(fill):
         for x, y in points:
             di.ellipse([x - r, y - r, x + r, y + r], fill=255)
 
-    for polygon in (SHARD, CHIP):
-        db.polygon(scaled(polygon), fill=255)
-        stroke(polygon, 1.7, closed=True)
+    db.polygon(scaled(SHARD), fill=255)
+    stroke(SHARD, 1.7, closed=True)
     for line in WRITING:
         stroke(line, 1.2)
     ink = ink.resize((25, 25), Image.BOX)
@@ -116,7 +108,7 @@ for size in (144, 48):
     inner = size - 2 * pad
     # thinner lines in the small icon, like the 25px PebbleOS icons
     outline, ink = (1.5, 1.1) if size >= 100 else (1.8, 1.3)
-    canvas.alpha_composite(draw_shard(inner, ORANGE, outline, ink, motion=size >= 100),
+    canvas.alpha_composite(draw_shard(inner, ORANGE, outline, ink),
                            (pad, pad))
     canvas.save(os.path.join(STORE, f'icon-{size}.png'))
 

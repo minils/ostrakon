@@ -145,21 +145,15 @@ void ui_draw_loading_dots(GContext *ctx, GPoint center, int frame,
 //
 // It moves like the icons of the PebbleOS Weather app: the shard drops in
 // with a squash and stretch and floats gently, while the writing is
-// scratched onto it stroke by stroke with dust flying off the tip. The chip
-// broken off its corner floats on its own. Once the writing is done the
-// shard hops, shakes the writing off and it starts over.
+// scratched onto it stroke by stroke with dust flying off the tip. Once
+// the writing is done the shard hops, shakes the writing off and it starts
+// over.
 
 #define SHARD_GRID 500
 #define SHARD_NUM_POINTS 11
 static const GPoint SHARD_POINTS[SHARD_NUM_POINTS] = {
-    {30, 190},  {110, 110}, {290, 110}, {330, 160}, {380, 140}, {390, 190},
-    {460, 220}, {460, 340}, {360, 450}, {130, 450}, {30, 350}};
-#define CHIP_NUM_POINTS 4
-static const GPoint CHIP_POINTS[CHIP_NUM_POINTS] = {
-    {360, 30}, {430, 20}, {460, 70}, {410, 90}};
-// short lines between the shard and the chip, as if it just flew off
-static const GPoint MOTION_LINES[][2] = {{{310, 60}, {330, 80}},
-                                         {{476, 124}, {488, 132}}};
+    {30, 150},  {110, 70},  {290, 70},  {330, 120}, {380, 100}, {390, 150},
+    {460, 180}, {460, 300}, {360, 410}, {130, 410}, {30, 310}};
 
 // the writing, one horizontal stroke per entry, scratched in this order
 typedef struct {
@@ -169,14 +163,14 @@ typedef struct {
 } Stroke;
 
 static const Stroke WRITING[] = {
-    {110, 280, 200}, {110, 180, 270}, {220, 380, 270},
-    {110, 240, 340}, {280, 360, 340},
+    {110, 280, 160}, {110, 180, 230}, {220, 380, 230},
+    {110, 240, 300}, {280, 360, 300},
 };
 #define NUM_STROKES ((int)ARRAY_LENGTH(WRITING))
 
 // The shard squashes and stretches around the middle of its bottom edge
 #define SHARD_ANCHOR_X 250
-#define SHARD_ANCHOR_Y 450
+#define SHARD_ANCHOR_Y 410
 
 // Where the shard is and how it is squashed, per frame: an offset in
 // tenths of the grid and a scale in percent
@@ -193,8 +187,8 @@ static const Pose DROP_IN[] = {
 };
 // crouches, hops and lands again while the writing is shaken off
 static const Pose HOP[] = {
-    {0, 108, 92},  {-40, 94, 108}, {-60, 96, 105}, {-40, 100, 100},
-    {0, 114, 86},  {0, 104, 96},   {0, 100, 100},
+    {0, 108, 92}, {-40, 94, 108}, {-60, 96, 105}, {-40, 100, 100},
+    {0, 114, 86}, {0, 104, 96},   {0, 100, 100},
 };
 #define DROP_IN_FRAMES ((int)ARRAY_LENGTH(DROP_IN))
 #define HOP_FRAMES ((int)ARRAY_LENGTH(HOP))
@@ -206,9 +200,8 @@ static const Pose HOP[] = {
 #define STROKE_GAP 60
 // frames the finished writing stays before the hop
 #define HOLD_FRAMES 12
-// frames of one float up and down, of the shard and of the chip
+// frames of one float up and down
 #define FLOAT_FRAMES 40
-#define CHIP_FLOAT_FRAMES 26
 #define LOADING_SHARD_FRAME_MS 66
 
 #ifdef PBL_COLOR
@@ -230,19 +223,16 @@ typedef struct {
   int stage_frame;
   int frame;  // since the shard landed, for floating
   GPath *shard_path;
-  GPath *chip_path;
   GPoint shard_points[SHARD_NUM_POINTS];
-  GPoint chip_points[CHIP_NUM_POINTS];
   GPoint origin;
   int size;
 } LoadingData;
 
-// a point of the grid on the screen, offset by dx and dy (in grid tenths)
-// and squashed by pose
-static GPoint shard_point(const LoadingData *data, GPoint grid, int dx, int dy,
+// a point of the grid on the screen, floated up or down by dy (in grid
+// tenths) and squashed by pose
+static GPoint shard_point(const LoadingData *data, GPoint grid, int dy,
                           const Pose *pose) {
-  int32_t x =
-      SHARD_ANCHOR_X + (grid.x - SHARD_ANCHOR_X) * pose->scale_x / 100 + dx;
+  int32_t x = SHARD_ANCHOR_X + (grid.x - SHARD_ANCHOR_X) * pose->scale_x / 100;
   int32_t y = SHARD_ANCHOR_Y + (grid.y - SHARD_ANCHOR_Y) * pose->scale_y / 100 +
               pose->dy + dy;
   return GPoint(data->origin.x + x * data->size / SHARD_GRID,
@@ -279,33 +269,10 @@ static void loading_update(Layer *layer, GContext *ctx) {
   graphics_context_set_antialiased(ctx, true);
   graphics_context_set_stroke_color(ctx, GColorBlack);
 
-  // the chip floats on its own, in a small loop
-  int chip_dx = 0;
-  int chip_dy = 0;
-  if (data->stage != LoadingDropIn) {
-    chip_dx = wave(8, data->frame, CHIP_FLOAT_FRAMES, TRIG_MAX_ANGLE / 4);
-    chip_dy = wave(20, data->frame, CHIP_FLOAT_FRAMES, 0);
-  }
-  for (int i = 0; i < CHIP_NUM_POINTS; i++) {
-    data->chip_points[i] =
-        shard_point(data, CHIP_POINTS[i], chip_dx, float_y + chip_dy, pose);
+  for (int i = 0; i < SHARD_NUM_POINTS; i++) {
+    data->shard_points[i] = shard_point(data, SHARD_POINTS[i], float_y, pose);
   }
   graphics_context_set_fill_color(ctx, SHARD_FILL_COLOR);
-  gpath_draw_filled(ctx, data->chip_path);
-  graphics_context_set_stroke_width(ctx, outline > 3 ? 3 : 2);
-  gpath_draw_outline(ctx, data->chip_path);
-  // the motion lines show while the chip is up, away from the shard
-  if (chip_dy < 0) {
-    for (int i = 0; i < (int)ARRAY_LENGTH(MOTION_LINES); i++) {
-      graphics_draw_line(
-          ctx, shard_point(data, MOTION_LINES[i][0], 0, float_y, pose),
-          shard_point(data, MOTION_LINES[i][1], 0, float_y, pose));
-    }
-  }
-
-  for (int i = 0; i < SHARD_NUM_POINTS; i++) {
-    data->shard_points[i] = shard_point(data, SHARD_POINTS[i], 0, float_y, pose);
-  }
   gpath_draw_filled(ctx, data->shard_path);
   graphics_context_set_stroke_width(ctx, outline);
   gpath_draw_outline(ctx, data->shard_path);
@@ -333,20 +300,22 @@ static void loading_update(Layer *layer, GContext *ctx) {
       to_x -= cut;
     }
     graphics_draw_line(
-        ctx, shard_point(data, GPoint(from_x, stroke->y), 0, float_y, pose),
-        shard_point(data, GPoint(to_x, stroke->y), 0, float_y, pose));
+        ctx, shard_point(data, GPoint(from_x, stroke->y), float_y, pose),
+        shard_point(data, GPoint(to_x, stroke->y), float_y, pose));
     if (written < length) {
       // dust flying off the tip, a little further every frame
       GPoint tip = GPoint(to_x, stroke->y);
       int fly = 20 + 15 * (data->stage_frame % 3);
       graphics_context_set_fill_color(ctx, GColorBlack);
       graphics_fill_circle(
-          ctx, shard_point(data, GPoint(tip.x + fly, tip.y - 2 * fly), 0,
-                           float_y, pose),
+          ctx,
+          shard_point(data, GPoint(tip.x + fly, tip.y - 2 * fly), float_y,
+                      pose),
           1);
       graphics_fill_circle(
-          ctx, shard_point(data, GPoint(tip.x + 2 * fly, tip.y - fly), 0,
-                           float_y, pose),
+          ctx,
+          shard_point(data, GPoint(tip.x + 2 * fly, tip.y - fly), float_y,
+                      pose),
           1);
     }
     written -= length;
@@ -404,10 +373,8 @@ Layer *ui_loading_layer_create(GRect frame) {
   data->origin =
       GPoint((frame.size.w - data->size) / 2, (frame.size.h - data->size) / 2);
   // the points are filled in when drawing
-  data->shard_path = gpath_create(&(GPathInfo){
-      .num_points = SHARD_NUM_POINTS, .points = data->shard_points});
-  data->chip_path = gpath_create(
-      &(GPathInfo){.num_points = CHIP_NUM_POINTS, .points = data->chip_points});
+  data->shard_path = gpath_create(&(GPathInfo){.num_points = SHARD_NUM_POINTS,
+                                               .points = data->shard_points});
 
   layer_set_update_proc(layer, loading_update);
   layer_set_hidden(layer, true);
@@ -433,7 +400,6 @@ void ui_loading_layer_destroy(Layer *layer) {
   ui_loading_layer_set_active(layer, false);
   LoadingData *data = layer_get_data(layer);
   gpath_destroy(data->shard_path);
-  gpath_destroy(data->chip_path);
   layer_destroy(layer);
 }
 

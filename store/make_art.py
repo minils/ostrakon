@@ -2,7 +2,7 @@
 # (as in the Weather app): a flat fill with a thick black outline, chamfered
 # corners and round line caps.
 #   store/icon-144.png, store/icon-48.png, store/banner-720x320.png
-#   resources/memosicon~color.png, resources/memosicon~bw.png (25x25 menu icon)
+#   resources/memosicon.png (25x25 menu icon)
 # Usage: python3 store/make_art.py   (needs Pillow and the Inter font)
 import os
 from PIL import Image, ImageDraw, ImageFont
@@ -61,46 +61,49 @@ def draw_shard(size, fill, outline, ink, ss=8):
     return img
 
 
-def pixel_shard(fill):
-    """The 25x25 menu icon: only black, the fill and transparent pixels, so
-    it stays crisp on the watch."""
-    ss = 16
-    big = 25 * ss
-    ink = Image.new('L', (big, big), 0)
-    body = Image.new('L', (big, big), 0)
-    di = ImageDraw.Draw(ink)
-    db = ImageDraw.Draw(body)
+# The 25x25 menu icon, drawn pixel by pixel as black line art like the
+# icons of the PebbleOS launcher, which shows icons without their colors:
+# the outline of the shard and its writing, see-through inside so it also
+# looks right on the highlight
+MENU_ICON = """
+.........................
+.........................
+.........................
+.....#########...........
+....##########...##......
+...##.......##..####.....
+..##.........##.##.##....
+.##...........###...##...
+##...#######...#.....##..
+##...#######..........##.
+##....................##.
+##....................##.
+##...####.#########...##.
+##...####.#########...##.
+##....................##.
+##...................##..
+.##..#########......##...
+..##.#########.....##....
+...##.............##.....
+....###############......
+.....#############.......
+.........................
+.........................
+.........................
+.........................
+"""
 
-    def scaled(points):
-        return [(x * ss, y * ss) for x, y in points]
 
-    def stroke(points, width, closed=False):
-        points = scaled(points)
-        if closed:
-            points = points + [points[0]]
-        di.line(points, fill=255, width=int(width * ss))
-        r = width * ss / 2
-        for x, y in points:
-            di.ellipse([x - r, y - r, x + r, y + r], fill=255)
-
-    db.polygon(scaled(SHARD), fill=255)
-    stroke(SHARD, 1.7, closed=True)
-    for line in WRITING:
-        stroke(line, 1.2)
-    ink = ink.resize((25, 25), Image.BOX)
-    body = body.resize((25, 25), Image.BOX)
+def menu_icon():
     img = Image.new('RGBA', (25, 25), (0, 0, 0, 0))
-    for y in range(25):
-        for x in range(25):
-            if ink.getpixel((x, y)) >= 110:
+    for y, row in enumerate(MENU_ICON.strip('\n').split('\n')):
+        for x, pixel in enumerate(row):
+            if pixel == '#':
                 img.putpixel((x, y), BLACK)
-            elif body.getpixel((x, y)) >= 128:
-                img.putpixel((x, y), fill)
     return img
 
 
-pixel_shard(ORANGE).save(os.path.join(RESOURCES, 'memosicon~color.png'))
-pixel_shard(WHITE).save(os.path.join(RESOURCES, 'memosicon~bw.png'))
+menu_icon().save(os.path.join(RESOURCES, 'memosicon.png'))
 
 for size in (144, 48):
     pad = size // 16

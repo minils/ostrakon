@@ -320,7 +320,7 @@ static void loading_update(Layer *layer, GContext *ctx) {
   }
   // while it is shaken off, each stroke shrinks toward its middle
   int shrink = data->stage == LoadingHop ? data->stage_frame : 0;
-  graphics_context_set_stroke_width(ctx, 3);
+  graphics_context_set_stroke_width(ctx, outline > 3 ? 4 : 3);
   for (int i = 0; i < NUM_STROKES && written > STROKE_GAP; i++) {
     written -= STROKE_GAP;
     const Stroke *stroke = &WRITING[i];

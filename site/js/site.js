@@ -27,14 +27,16 @@
   }
 
   /* =========================================================
-   * The shard: the same outline as the app icon, with made-up
-   * glyphs scratched into it (a port of store/make_art.py)
+   * The shard: the app icon, in the style of the PebbleOS icons
+   * (a port of store/make_art.py), and made-up glyphs for the
+   * scratched writing behind the hero
    * ========================================================= */
 
   var SVG = 'http://www.w3.org/2000/svg';
-  var SHARD = [[0.5, 7], [4.5, 3.5], [8, 4.2], [12.5, 1.5], [17.5, 3], [24.5, 5],
-               [23, 9.5], [24.5, 13], [21, 17.5], [22, 20.5], [16, 23.5],
-               [13, 21], [8.5, 22.5], [6, 18.5], [2, 17], [3, 12]];
+  var SHARD = [[1.5, 7.5], [5.5, 3.5], [14.5, 3.5], [16.5, 6], [19, 5], [19.5, 7.5],
+               [23, 9], [23, 15], [18, 20.5], [6.5, 20.5], [1.5, 15.5]];
+  var WRITING = [[[5.5, 8], [14, 8]], [[5.5, 11.5], [9, 11.5]], [[11, 11.5], [19, 11.5]],
+                 [[5.5, 15], [12, 15]], [[14, 15], [18, 15]]];
 
   function rng(seed) {  // mulberry32
     return function() {
@@ -78,44 +80,19 @@
     return paths;
   }
 
-  var shardCount = 0;
+  // Thicker lines when small, like the 48px icon. When animated, the
+  // writing is scratched on stroke by stroke.
   function drawShard(svg) {
-    var id = 'sh' + (shardCount++);
-    var seed = parseInt(svg.getAttribute('data-shard'), 10) || 11;
-    var r = rng(seed);
-    var pts = SHARD.map(function(p) { return p.join(','); }).join(' ');
-    var cx = 0, cy = 0;
-    SHARD.forEach(function(p) { cx += p[0]; cy += p[1]; });
-    cx /= SHARD.length; cy /= SHARD.length;
-    var inner = SHARD.map(function(p) {
-      return f(cx + (p[0] - cx) * 0.93) + ',' + f(cy + (p[1] - cy) * 0.93);
-    }).join(' ');
-
-    var ink = [];
-    var lines = [[5.6, [[4.2, 4], [12.6, 4]]], [10.0, [[5.0, 3], [11.4, 4]]], [14.4, [[7.4, 4]]]];
-    lines.forEach(function(line) {
-      line[1].forEach(function(word) {
-        for (var i = 0; i < word[1]; i++) {
-          ink = ink.concat(glyphPaths(r, word[0] + i * 1.85, line[0], 1.55, 2.3));
-        }
-      });
-    });
+    var small = svg.classList.contains('shard-sm');
     var animate = svg.hasAttribute('data-animate');
-    var inkSvg = ink.map(function(d, i) {
-      var style = animate ? ' style="animation-delay:' + (0.35 + i * 0.045).toFixed(3) + 's"' : '';
-      return '<path d="' + d + '" pathLength="1" stroke-width="0.42"' + style + '/>';
+    var pts = SHARD.map(function(p) { return p.join(','); }).join(' ');
+    var ink = WRITING.map(function(line, i) {
+      var style = animate ? ' style="animation-delay:' + (0.35 + i * 0.22).toFixed(2) + 's"' : '';
+      return '<path d="M' + line[0].join(' ') + 'L' + line[1].join(' ') + '" pathLength="1"' + style + '/>';
     }).join('');
-
     svg.innerHTML =
-        '<defs>' +
-        '<radialGradient id="' + id + 'g" cx="0.2" cy="0.15" r="0.75">' +
-        '<stop offset="0" stop-color="#d68054"/><stop offset="1" stop-color="#be623a"/></radialGradient>' +
-        '<clipPath id="' + id + 'c"><polygon points="' + inner + '"/></clipPath>' +
-        '</defs>' +
-        '<polygon points="' + pts + '" fill="#80391e"/>' +
-        '<polygon points="' + inner + '" fill="url(#' + id + 'g)"/>' +
-        '<g clip-path="url(#' + id + 'c)"><g class="ink" transform="rotate(4 12.5 12.5)">' +
-        inkSvg + '</g></g>';
+        '<polygon class="body" points="' + pts + '" stroke-width="' + (small ? 1.8 : 1.4) + '"/>' +
+        '<g class="ink" stroke-width="' + (small ? 1.3 : 1) + '">' + ink + '</g>';
   }
   $$('svg[data-shard]').forEach(drawShard);
 
@@ -742,7 +719,7 @@
     canvas.width = innerWidth * dpr;
     canvas.height = innerHeight * dpr;
     ctx.scale(dpr, dpr);
-    var colors = ['#be623a', '#d68054', '#80391e', '#46200f'];
+    var colors = ['#ff5500', '#ff8a4d', '#111111', '#9a9a9a'];
     var bits = [];
     for (var i = 0; i < 140; i++) {
       var pts = [];

@@ -90,6 +90,6 @@ Ostrakon ist eine unabhängige App für Memos (usememos.com) und gehört nicht z
   7. `glance`: the app glance in the launcher with the number of open todos
 * `banner-720x320.png`: header banner
 * `settings/`: screenshots of the settings page for the README, one per section; regenerate them with `node store/settings_screenshots.js`
-* Screenshots still need to be taken per platform, e.g. with the emulator (`pebble install --emulator emery` and `pebble screenshot`)
+* Take the screenshots again with `store/take_screenshots.py` (see the README)
 
 Regenerate the graphics, and the menu icons in `resources/`, with `python3 store/make_art.py`.

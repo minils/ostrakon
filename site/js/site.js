@@ -454,34 +454,50 @@
     return 'img/screens/' + platform + '-' + (i + 1) + '-' + SCREENS[i][0] + '.png';
   }
 
-  // preload, so the buttons feel instant
-  SCREENS.forEach(function(s, i) { new Image().src = shotSrc('emery', i); });
+  // The watch in the hero runs the app from screenshots: every screen it
+  // can reach in the emulator, with where up, down and select lead
+  // (see store/take_screenshots.py). Back returns to the screen before.
+  var WATCH = window.OSTRAKON_WATCH;
+  var heroScreen = WATCH.start;
+  var heroHistory = [];
 
-  var heroIndex = 0;
-  var heroTimer = null;
-  function showHero(i) {
-    heroIndex = (i + SCREENS.length) % SCREENS.length;
-    var img = $('#hero-shot');
-    img.src = shotSrc('emery', heroIndex);
-    img.alt = 'Ostrakon on a Pebble Time 2: ' + SCREENS[heroIndex][1].toLowerCase();
-    img.classList.remove('swap');
-    void img.offsetWidth;
-    img.classList.add('swap');
-    $('#hero-caption').textContent = (heroIndex + 1) + '/' + SCREENS.length + ' ' + SCREENS[heroIndex][0];
+  function watchSrc(id) { return 'img/watch/' + WATCH.screens[id].i + '.png'; }
+  // the screens one press away, so the buttons feel instant
+  function preloadAround(id) {
+    var next = WATCH.screens[id] || {};
+    ['u', 'd', 's'].forEach(function(k) { if (next[k]) new Image().src = watchSrc(next[k]); });
   }
-  function autoplay(on) {
-    clearInterval(heroTimer);
-    if (on && !reduceMotion) heroTimer = setInterval(function() { showHero(heroIndex + 1); }, 3200);
+  function showScreen(id) {
+    heroScreen = id;
+    $('#hero-shot').src = watchSrc(id);
+    preloadAround(id);
+  }
+  // a little shake where a button does nothing here, e.g. dictation
+  function nudge() {
+    var watch = $('#hero-watch');
+    watch.classList.remove('nudge');
+    void watch.offsetWidth;
+    watch.classList.add('nudge');
+  }
+  function pressButton(act) {
+    var screen = WATCH.screens[heroScreen] || {};
+    if (act === 'back') {
+      if (heroHistory.length) showScreen(heroHistory.pop());
+      else if (heroScreen !== WATCH.launcher) showScreen(WATCH.launcher);  // leaves the app
+      else nudge();
+    } else if (act === 'select') {
+      if (!screen.s) return nudge();
+      if (heroScreen !== WATCH.launcher) heroHistory.push(heroScreen);
+      showScreen(screen.s);
+    } else {
+      var to = screen[act === 'up' ? 'u' : 'd'];
+      if (to && to !== heroScreen) showScreen(to);
+    }
   }
   $$('#hero-watch .wbtn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      autoplay(false);
-      var act = btn.getAttribute('data-act');
-      showHero(act === 'back' ? 0 : act === 'up' ? heroIndex - 1 : heroIndex + 1);
-    });
+    btn.addEventListener('click', function() { pressButton(btn.getAttribute('data-act')); });
   });
-  showHero(0);
-  autoplay(true);
+  showScreen(heroScreen);
 
   /* =========================================================
    * Screens gallery
@@ -684,6 +700,7 @@
   var KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
                 'ArrowLeft', 'ArrowRight', 'b', 'a'];
   var konamiPos = 0;
+  var WATCH_KEYS = {ArrowUp: 'up', ArrowDown: 'down', ArrowRight: 'select', ArrowLeft: 'back'};
 
   document.addEventListener('keydown', function(e) {
     var typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable;
@@ -701,12 +718,11 @@
     if (e.key === '`' || e.key === '~') {
       e.preventDefault();
       openShell();
-    } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    } else if (WATCH_KEYS[e.key]) {
       var rect = $('#hero-watch').getBoundingClientRect();
       if (rect.bottom > 0 && rect.top < window.innerHeight) {
         e.preventDefault();
-        autoplay(false);
-        showHero(heroIndex + (e.key === 'ArrowUp' ? -1 : 1));
+        pressButton(WATCH_KEYS[e.key]);
       }
     }
   });

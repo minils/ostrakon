@@ -301,8 +301,10 @@ h1 {
   display: block; width: 100%; height: 100%;
   image-rendering: pixelated; image-rendering: crisp-edges;
 }
-.watch-screen img.swap { animation: swap .22s ease-out; }
-@keyframes swap { from { opacity: .2; transform: translateY(6px); } }
+/* nothing to do for that button here */
+.watch.nudge .watch-screen { animation: nudge .25s ease-in-out; }
+@keyframes nudge { 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+@media (prefers-reduced-motion: reduce) { .watch.nudge .watch-screen { animation: none; } }
 .watch-brand {
   text-align: center; margin-top: 10px;
   font: 700 .72rem var(--sans); letter-spacing: .3em; color: #8a8a8a; text-transform: lowercase;

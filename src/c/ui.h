@@ -41,8 +41,8 @@ void ui_scroll_arrow_update(Layer *arrow);
 void ui_draw_loading_dots(GContext *ctx, GPoint center, int frame,
                           bool on_highlight);
 
-// A layer showing the app's shard while active, with writing scratched
-// onto it glyph by glyph, hidden otherwise
+// A layer showing the app's shard while active, animated like the icons of
+// the PebbleOS Weather app, with writing scratched onto it; hidden otherwise
 Layer *ui_loading_layer_create(GRect frame);
 void ui_loading_layer_set_active(Layer *layer, bool active);
 void ui_loading_layer_destroy(Layer *layer);

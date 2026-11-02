@@ -139,111 +139,222 @@ void ui_draw_loading_dots(GContext *ctx, GPoint center, int frame,
   }
 }
 
-// The app icon's shard, on which the writing is scratched glyph by glyph.
-// Coordinates are in a 50x50 grid, twice that of the shard in
-// store/make_art.py.
+// The app icon's shard, drawn like the PebbleOS icons: a flat fill with a
+// thick black outline. Coordinates are in tenths of a 50x50 grid, twice
+// the 25x25 grid of the shard in store/make_art.py.
+//
+// It moves like the icons of the PebbleOS Weather app: the shard drops in
+// with a squash and stretch and floats gently, while the writing is
+// scratched onto it stroke by stroke with dust flying off the tip. Once
+// the writing is done the shard hops, shakes the writing off and it starts
+// over.
 
-#define SHARD_GRID 50
-#define SHARD_NUM_POINTS 16
+#define SHARD_GRID 500
+#define SHARD_NUM_POINTS 11
 static const GPoint SHARD_POINTS[SHARD_NUM_POINTS] = {
-    {1, 14},  {9, 7},   {16, 8},  {25, 3},  {35, 6},  {49, 10},
-    {46, 19}, {49, 26}, {42, 35}, {44, 41}, {32, 47}, {26, 42},
-    {17, 45}, {12, 37}, {4, 34},  {6, 24}};
+    {30, 150},  {110, 70},  {290, 70},  {330, 120}, {380, 100}, {390, 150},
+    {460, 180}, {460, 300}, {360, 410}, {130, 410}, {30, 310}};
 
-// made-up glyphs of one or two strokes in a 3x5 box
+// the writing, one horizontal stroke per entry, scratched in this order
 typedef struct {
-  GPoint from[2];
-  GPoint to[2];
-  int num_strokes;
-} Glyph;
+  int16_t from_x;
+  int16_t to_x;
+  int16_t y;
+} Stroke;
 
-static const Glyph GLYPHS[] = {
-    {{{0, 5}}, {{2, 0}}, 1},                  // slash
-    {{{0, 0}, {0, 4}}, {{0, 4}, {3, 3}}, 2},  // hook
-    {{{0, 1}, {1, 0}}, {{3, 1}, {1, 5}}, 2},  // cross
-    {{{0, 5}, {1, 0}}, {{1, 0}, {3, 5}}, 2},  // lambda
-    {{{0, 2}, {3, 2}}, {{3, 2}, {1, 5}}, 2},  // seven
-    {{{0, 0}, {0, 5}}, {{3, 5}, {1, 3}}, 2},  // tick
+static const Stroke WRITING[] = {
+    {110, 280, 160}, {110, 180, 230}, {220, 380, 230},
+    {110, 240, 300}, {280, 360, 300},
 };
+#define NUM_STROKES ((int)ARRAY_LENGTH(WRITING))
 
-// one word per entry: where it starts and which glyphs it has
+// The shard squashes and stretches around the middle of its bottom edge
+#define SHARD_ANCHOR_X 250
+#define SHARD_ANCHOR_Y 410
+
+// Where the shard is and how it is squashed, per frame: an offset in
+// tenths of the grid and a scale in percent
 typedef struct {
-  GPoint origin;
-  int num_glyphs;
-  uint8_t glyphs[4];
-} Word;
+  int16_t dy;
+  uint8_t scale_x;
+  uint8_t scale_y;
+} Pose;
 
-#define GLYPH_ADVANCE 4
-static const Word WORDS[] = {
-    {{8, 11}, 4, {1, 3, 0, 4}},  {{26, 11}, 4, {2, 5, 1, 0}},
-    {{10, 20}, 3, {4, 0, 3}},    {{24, 20}, 4, {5, 1, 2, 3}},
-    {{15, 29}, 4, {0, 4, 5, 1}},
+// falls in stretched, lands squashed and bounces back into shape
+static const Pose DROP_IN[] = {
+    {-250, 80, 125}, {-150, 85, 120}, {-60, 92, 110}, {0, 120, 80},
+    {0, 110, 90},    {-30, 95, 106},  {-10, 102, 98}, {0, 100, 100},
 };
-#define NUM_WORDS ((int)ARRAY_LENGTH(WORDS))
-#define NUM_WRITTEN_GLYPHS 19
-// frames the finished writing stays before it starts over
-#define LOADING_HOLD_FRAMES 8
-#define LOADING_SHARD_FRAME_MS 100
+// crouches, hops and lands again while the writing is shaken off
+static const Pose HOP[] = {
+    {0, 108, 92}, {-40, 94, 108}, {-60, 96, 105}, {-40, 100, 100},
+    {0, 114, 86}, {0, 104, 96},   {0, 100, 100},
+};
+#define DROP_IN_FRAMES ((int)ARRAY_LENGTH(DROP_IN))
+#define HOP_FRAMES ((int)ARRAY_LENGTH(HOP))
+// frames the writing takes to vanish at the start of the hop
+#define WIPE_FRAMES 3
+
+// grid tenths written per frame, and the pause before each stroke
+#define WRITE_SPEED 45
+#define STROKE_GAP 60
+// frames the finished writing stays before the hop
+#define HOLD_FRAMES 12
+// frames of one float up and down
+#define FLOAT_FRAMES 40
+#define LOADING_SHARD_FRAME_MS 66
 
 #ifdef PBL_COLOR
-#define SHARD_FILL_COLOR GColorRajah
-#define SHARD_EDGE_COLOR GColorWindsorTan
-#define SHARD_INK_COLOR GColorBulgarianRose
+#define SHARD_FILL_COLOR GColorOrange
 #else
 #define SHARD_FILL_COLOR GColorWhite
-#define SHARD_EDGE_COLOR GColorBlack
-#define SHARD_INK_COLOR GColorBlack
 #endif
+
+typedef enum {
+  LoadingDropIn,
+  LoadingWrite,
+  LoadingHold,
+  LoadingHop,
+} LoadingStage;
 
 typedef struct {
   AppTimer *timer;
-  int frame;
-  GPath *path;
-  GPoint points[SHARD_NUM_POINTS];
+  LoadingStage stage;
+  int stage_frame;
+  int frame;  // since the shard landed, for floating
+  GPath *shard_path;
+  GPoint shard_points[SHARD_NUM_POINTS];
   GPoint origin;
   int size;
 } LoadingData;
 
-static GPoint shard_point(const LoadingData *data, GPoint grid) {
-  return GPoint(data->origin.x + grid.x * data->size / SHARD_GRID,
-                data->origin.y + grid.y * data->size / SHARD_GRID);
+// a point of the grid on the screen, floated up or down by dy (in grid
+// tenths) and squashed by pose
+static GPoint shard_point(const LoadingData *data, GPoint grid, int dy,
+                          const Pose *pose) {
+  int32_t x = SHARD_ANCHOR_X + (grid.x - SHARD_ANCHOR_X) * pose->scale_x / 100;
+  int32_t y = SHARD_ANCHOR_Y + (grid.y - SHARD_ANCHOR_Y) * pose->scale_y / 100 +
+              pose->dy + dy;
+  return GPoint(data->origin.x + x * data->size / SHARD_GRID,
+                data->origin.y + y * data->size / SHARD_GRID);
+}
+
+// amplitude * sin of frame out of period frames
+static int wave(int amplitude, int frame, int period, int32_t offset) {
+  int32_t angle = (frame % period) * TRIG_MAX_ANGLE / period + offset;
+  return amplitude * sin_lookup(angle) / TRIG_MAX_RATIO;
+}
+
+static int writing_length(void) {
+  int length = 0;
+  for (int i = 0; i < NUM_STROKES; i++) {
+    length += STROKE_GAP + WRITING[i].to_x - WRITING[i].from_x;
+  }
+  return length;
 }
 
 static void loading_update(Layer *layer, GContext *ctx) {
   LoadingData *data = layer_get_data(layer);
+  static const Pose rest = {0, 100, 100};
+  const Pose *pose = &rest;
+  if (data->stage == LoadingDropIn) {
+    pose = &DROP_IN[data->stage_frame];
+  } else if (data->stage == LoadingHop) {
+    pose = &HOP[data->stage_frame];
+  }
+  int outline = data->size >= 100 ? 5 : 3;
+  int float_y =
+      data->stage == LoadingDropIn ? 0 : wave(15, data->frame, FLOAT_FRAMES, 0);
 
   graphics_context_set_antialiased(ctx, true);
-  graphics_context_set_fill_color(ctx, SHARD_FILL_COLOR);
-  gpath_draw_filled(ctx, data->path);
-  graphics_context_set_stroke_color(ctx, SHARD_EDGE_COLOR);
-  graphics_context_set_stroke_width(ctx, 2);
-  gpath_draw_outline(ctx, data->path);
+  graphics_context_set_stroke_color(ctx, GColorBlack);
 
-  int written = data->frame % (NUM_WRITTEN_GLYPHS + LOADING_HOLD_FRAMES);
-  graphics_context_set_stroke_color(ctx, SHARD_INK_COLOR);
-  graphics_context_set_stroke_width(ctx, data->size >= 90 ? 3 : 2);
-  int count = 0;
-  for (int w = 0; w < NUM_WORDS; w++) {
-    const Word *word = &WORDS[w];
-    for (int g = 0; g < word->num_glyphs; g++) {
-      if (count++ >= written) {
-        return;
-      }
-      const Glyph *glyph = &GLYPHS[word->glyphs[g]];
-      GPoint at = GPoint(word->origin.x + g * GLYPH_ADVANCE, word->origin.y);
-      for (int s = 0; s < glyph->num_strokes; s++) {
-        GPoint from = GPoint(at.x + glyph->from[s].x, at.y + glyph->from[s].y);
-        GPoint to = GPoint(at.x + glyph->to[s].x, at.y + glyph->to[s].y);
-        graphics_draw_line(ctx, shard_point(data, from), shard_point(data, to));
-      }
+  for (int i = 0; i < SHARD_NUM_POINTS; i++) {
+    data->shard_points[i] = shard_point(data, SHARD_POINTS[i], float_y, pose);
+  }
+  graphics_context_set_fill_color(ctx, SHARD_FILL_COLOR);
+  gpath_draw_filled(ctx, data->shard_path);
+  graphics_context_set_stroke_width(ctx, outline);
+  gpath_draw_outline(ctx, data->shard_path);
+
+  // how much of the writing is there: all of it until the hop shakes it off
+  int written = 0;
+  if (data->stage == LoadingWrite) {
+    written = data->stage_frame * WRITE_SPEED;
+  } else if (data->stage == LoadingHold ||
+             (data->stage == LoadingHop && data->stage_frame < WIPE_FRAMES)) {
+    written = writing_length();
+  }
+  // while it is shaken off, each stroke shrinks toward its middle
+  int shrink = data->stage == LoadingHop ? data->stage_frame : 0;
+  graphics_context_set_stroke_width(ctx, outline > 3 ? 4 : 3);
+  for (int i = 0; i < NUM_STROKES && written > STROKE_GAP; i++) {
+    written -= STROKE_GAP;
+    const Stroke *stroke = &WRITING[i];
+    int length = stroke->to_x - stroke->from_x;
+    int from_x = stroke->from_x;
+    int to_x = stroke->from_x + (written < length ? written : length);
+    if (shrink) {
+      int cut = length * shrink / (2 * WIPE_FRAMES);
+      from_x += cut;
+      to_x -= cut;
     }
+    graphics_draw_line(
+        ctx, shard_point(data, GPoint(from_x, stroke->y), float_y, pose),
+        shard_point(data, GPoint(to_x, stroke->y), float_y, pose));
+    if (written < length) {
+      // dust flying off the tip, a little further every frame
+      GPoint tip = GPoint(to_x, stroke->y);
+      int fly = 20 + 15 * (data->stage_frame % 3);
+      graphics_context_set_fill_color(ctx, GColorBlack);
+      graphics_fill_circle(
+          ctx,
+          shard_point(data, GPoint(tip.x + fly, tip.y - 2 * fly), float_y,
+                      pose),
+          1);
+      graphics_fill_circle(
+          ctx,
+          shard_point(data, GPoint(tip.x + 2 * fly, tip.y - fly), float_y,
+                      pose),
+          1);
+    }
+    written -= length;
   }
 }
 
 static void loading_tick(void *context) {
   Layer *layer = context;
   LoadingData *data = layer_get_data(layer);
-  data->frame++;
+  data->stage_frame++;
+  if (data->stage != LoadingDropIn) {
+    data->frame++;
+  }
+  switch (data->stage) {
+    case LoadingDropIn:
+      if (data->stage_frame >= DROP_IN_FRAMES) {
+        data->stage = LoadingWrite;
+        data->stage_frame = 0;
+      }
+      break;
+    case LoadingWrite:
+      if (data->stage_frame * WRITE_SPEED >= writing_length()) {
+        data->stage = LoadingHold;
+        data->stage_frame = 0;
+      }
+      break;
+    case LoadingHold:
+      if (data->stage_frame >= HOLD_FRAMES) {
+        data->stage = LoadingHop;
+        data->stage_frame = 0;
+      }
+      break;
+    case LoadingHop:
+      if (data->stage_frame >= HOP_FRAMES) {
+        data->stage = LoadingWrite;
+        data->stage_frame = 0;
+      }
+      break;
+  }
   layer_mark_dirty(layer);
   data->timer = app_timer_register(LOADING_SHARD_FRAME_MS, loading_tick, layer);
 }
@@ -252,17 +363,18 @@ Layer *ui_loading_layer_create(GRect frame) {
   Layer *layer = layer_create_with_data(frame, sizeof(LoadingData));
   LoadingData *data = layer_get_data(layer);
   data->timer = NULL;
+  data->stage = LoadingDropIn;
+  data->stage_frame = 0;
   data->frame = 0;
 
-  // half the shorter side, so the shard fits round displays too
-  data->size = (frame.size.w < frame.size.h ? frame.size.w : frame.size.h) / 2;
+  // three fifths of the shorter side, so the shard fits round displays too
+  data->size =
+      (frame.size.w < frame.size.h ? frame.size.w : frame.size.h) * 3 / 5;
   data->origin =
       GPoint((frame.size.w - data->size) / 2, (frame.size.h - data->size) / 2);
-  for (int i = 0; i < SHARD_NUM_POINTS; i++) {
-    data->points[i] = shard_point(data, SHARD_POINTS[i]);
-  }
-  GPathInfo info = {.num_points = SHARD_NUM_POINTS, .points = data->points};
-  data->path = gpath_create(&info);
+  // the points are filled in when drawing
+  data->shard_path = gpath_create(&(GPathInfo){.num_points = SHARD_NUM_POINTS,
+                                               .points = data->shard_points});
 
   layer_set_update_proc(layer, loading_update);
   layer_set_hidden(layer, true);
@@ -273,6 +385,8 @@ void ui_loading_layer_set_active(Layer *layer, bool active) {
   LoadingData *data = layer_get_data(layer);
   layer_set_hidden(layer, !active);
   if (active && !data->timer) {
+    data->stage = LoadingDropIn;
+    data->stage_frame = 0;
     data->frame = 0;
     data->timer =
         app_timer_register(LOADING_SHARD_FRAME_MS, loading_tick, layer);
@@ -284,7 +398,8 @@ void ui_loading_layer_set_active(Layer *layer, bool active) {
 
 void ui_loading_layer_destroy(Layer *layer) {
   ui_loading_layer_set_active(layer, false);
-  gpath_destroy(((LoadingData *)layer_get_data(layer))->path);
+  LoadingData *data = layer_get_data(layer);
+  gpath_destroy(data->shard_path);
   layer_destroy(layer);
 }
 

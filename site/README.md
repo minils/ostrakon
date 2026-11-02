@@ -5,6 +5,8 @@ dependencies. Upload the contents of this folder to any web server.
 
 * `index.html`, `css/site.css`, `js/site.js`
 * `img/`: copies of the icon and screenshots from `store/`
+* `img/watch/`: every screen the watch in the hero can show, and `watch.js`
+  with where each button leads; made by `store/take_screenshots.py`
 
 The only outside requests are made by the browser to the GitHub API, for
 the star count and the latest release (the download button points to the

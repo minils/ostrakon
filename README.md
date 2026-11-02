@@ -118,11 +118,12 @@ The app has two parts: the watch app in C (`src/c`) and the phone part in Pebble
 * Build with the [Pebble SDK](https://developer.repebble.com): `pebble build`. The phone-side JS is minified by `tools/minify.js`; the source map keeps stack traces readable.
 * Run the phone-side tests against a mock Memos server: `node test/pkjs.test.js`, or against the built, minified bundle with `PKJS_BUNDLE=build/pebble-js-app.js node test/pkjs.test.js`
 * Screenshots of the settings page for this README: `node store/settings_screenshots.js` (needs [Playwright](https://playwright.dev) with Chromium)
+* Screenshots of the app, for the store and the homepage's watch, with demo data in the emulator: `~/.local/share/uv/tools/pebble-tool/bin/python store/take_screenshots.py` after `pebble build` (it runs `store/demo_server.js`, a stand-in Memos server, and wipes the emulators it uses)
 * Translations: the watch texts are in `resources/lang/*.txt` (one file per language, loaded only for the language in use), the phone texts and the settings page in `src/pkjs/i18n.js`. Check the watch translations with `node test/i18n.test.js`.
 * Sources are formatted with `clang-format` in Google style (see `.clang-format`); CI checks this
 * The settings page is built with [Clay](https://github.com/pebble/clay) (MIT license), included in `src/pkjs/vendor`
 * GitHub Actions runs the tests and builds the app on every push; the `.pbw` can be downloaded from the run's artifacts and installed from the phone.
-* The homepage is in `site/`: plain HTML, CSS and JS without a build step, uploaded by hand. Its images are copies from `store/`, and its keyword playground has a copy of the parser in `src/pkjs/index.js`, so both need updating when those change.
+* The homepage is in `site/`: plain HTML, CSS and JS without a build step, uploaded by hand. Its images are copies from `store/`, apart from the screens of the watch in `site/img/watch/`, which `store/take_screenshots.py` makes, and its keyword playground has a copy of the parser in `src/pkjs/index.js`, so both need updating when those change.
 
 ### License
 

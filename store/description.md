@@ -79,7 +79,8 @@ Ostrakon ist eine unabhängige App für Memos (usememos.com) und gehört nicht z
 ## Graphics
 
 * `icon-144.png`: large store icon
-* `icon-48.png`: small store icon
+* `icon-80.png`: small store icon
+* `icon-48.png`: favicon and README icon
 * `screenshots/`: seven screenshots per platform, taken in the emulator with demo data: `basalt-*` (rectangular, 144×168, also for diorite and flint), `chalk-*` (round, 180×180, also for gabbro) and `emery-*` (large, 200×228). In this order:
   1. `recent`: the latest memos
   2. `memo`: a memo with heading, tasks and tags

@@ -1,7 +1,7 @@
 # Draws the app icons and store graphics in the style of the PebbleOS icons
 # (as in the Weather app): a flat fill with a thick black outline, chamfered
 # corners and round line caps.
-#   store/icon-144.png, store/icon-48.png, store/banner-720x320.png
+#   store/icon-144.png, store/icon-80.png, store/icon-48.png, store/banner-720x320.png
 #   resources/memosicon.png (25x25 menu icon)
 # Usage: python3 store/make_art.py   (needs Pillow and the Inter font)
 import os
@@ -107,7 +107,7 @@ def menu_icon():
 
 menu_icon().save(os.path.join(RESOURCES, 'memosicon.png'))
 
-for size in (144, 48):
+for size in (144, 80, 48):
     pad = size // 16
     canvas = Image.new('RGBA', (size, size), (0, 0, 0, 0))
     inner = size - 2 * pad

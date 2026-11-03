@@ -66,10 +66,10 @@ jobs:
           name: Ostrakon
           path: build/ostrakon.pbw
 
-  # a tag like v1.0.0 makes a draft release with the .pbw, to check and
+  # a tag like 1.0.0 makes a draft release with the .pbw, to check and
   # publish by hand
   release:
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/')
     needs: [test, build]
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -81,7 +81,7 @@ jobs:
       - name: Check the tag against the version in package.json
         run: |
           version=$(node -p "require('./package.json').version")
-          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
+          if [ "$GITHUB_REF_NAME" != "$version" ]; then
             echo "Tag $GITHUB_REF_NAME does not match version $version in package.json"
             exit 1
           fi
@@ -95,4 +95,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" ostrakon.pbw \
-            --draft --title "Ostrakon ${GITHUB_REF_NAME#v}" --generate-notes
+            --draft --title "Ostrakon $GITHUB_REF_NAME" --generate-notes

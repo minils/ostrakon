@@ -132,7 +132,7 @@ module.exports = function() {
           String(clayConfig.getItemByMessageKey('SETTING_URL').get() || '')
               .trim()
               .replace(/\/+$/, '')
-              .replace(/\/api\/v1\/memos$/, '');
+              .replace(/\/api(\/v1)?\/memos$/, '');
       var token =
           String(clayConfig.getItemByMessageKey('SETTING_TOKEN').get() || '')
               .trim();
@@ -142,25 +142,33 @@ module.exports = function() {
       }
 
       show(t.testRunning, '#cccccc');
-      var xhr = new XMLHttpRequest();
-      xhr.open('GET', url + '/api/v1/memos?pageSize=1', true);
-      xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-      xhr.timeout = 10000;
-      xhr.onload = function() {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          show(t.testOk, '#69f0ae');
-        } else if (xhr.status === 401 || xhr.status === 403) {
-          show(t.testRejected.replace('%s', xhr.status), '#ff8a80');
-        } else if (xhr.status === 404) {
-          show(t.testNotFound, '#ff8a80');
-        } else {
-          show(t.testServerError.replace('%s', xhr.status), '#ff8a80');
-        }
-      };
-      xhr.onerror = xhr.ontimeout = function() {
-        show(t.testUnavailable, '#cccccc');
-      };
-      xhr.send();
+      // auth/me needs a valid token; Memos before 26.10 serves it under
+      // /api/v1, later versions under /api and answer /api/v1 with 410
+      function check(prefixes) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url + prefixes[0] + 'auth/me', true);
+        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+        xhr.timeout = 10000;
+        xhr.onload = function() {
+          if ((xhr.status === 404 || xhr.status === 410) &&
+              prefixes.length > 1) {
+            check(prefixes.slice(1));
+          } else if (xhr.status >= 200 && xhr.status < 300) {
+            show(t.testOk, '#69f0ae');
+          } else if (xhr.status === 401 || xhr.status === 403) {
+            show(t.testRejected.replace('%s', xhr.status), '#ff8a80');
+          } else if (xhr.status === 404) {
+            show(t.testNotFound, '#ff8a80');
+          } else {
+            show(t.testServerError.replace('%s', xhr.status), '#ff8a80');
+          }
+        };
+        xhr.onerror = xhr.ontimeout = function() {
+          show(t.testUnavailable, '#cccccc');
+        };
+        xhr.send();
+      }
+      check(['/api/v1/', '/api/']);
     });
   });
 };

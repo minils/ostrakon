@@ -157,6 +157,9 @@ const server = http.createServer((req, res) => {
       const list = memos.filter(x => x.parent === m[1]);
       return send(200, newApi ? {comments: list} : {memos: list});
     }
+    if (req.method === 'GET' && u.pathname === '/api/v1/auth/me') {
+      return send(200, {user: {name: 'users/1', username: 'nils'}});
+    }
     if (req.method === 'GET' && u.pathname === '/api/v1/users/1') {
       userRequests++;
       return send(

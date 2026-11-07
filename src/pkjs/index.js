@@ -709,10 +709,17 @@ function notifyWatch(text, success) {
  * Memos API
  * ========================================================= */
 
-// Accepts both "https://host" and the legacy "https://host/api/v1/memos"
+// Accepts "https://host" and the legacy "https://host/api/v1/memos" or
+// "https://host/api/memos"
 function apiBase(url) {
-  return url.replace(/\/+$/, '').replace(/\/api\/v1\/memos$/, '');
+  return url.replace(/\/+$/, '').replace(/\/api(\/v1)?\/memos$/, '');
 }
+
+// Memos 26.10 moved the REST API from /api/v1/... to /api/... and answers
+// the old routes with 410 Gone (later releases drop them, giving 404). The
+// prefix that works is detected per server and remembered for the session.
+var API_PREFIXES = ['api/v1/', 'api/'];
+var apiPrefixes = {};
 
 function apiRequest(method, path, body, callback) {
   var settings = getSettings();
@@ -721,25 +728,56 @@ function apiRequest(method, path, body, callback) {
     return;
   }
 
+  var base = apiBase(settings.url);
+  var known = apiPrefixes[base];
+  var prefix = known || API_PREFIXES[0];
+
+  sendApiRequest(
+      method, base + '/' + prefix + path, settings.token, body,
+      function(err, data, status) {
+        var moved = status === 410 || (!known && status === 404);
+        if (!moved) {
+          if (!err) apiPrefixes[base] = prefix;
+          callback(err, data);
+          return;
+        }
+        var other = API_PREFIXES[(API_PREFIXES.indexOf(prefix) + 1) % 2];
+        sendApiRequest(
+            method, base + '/' + other + path, settings.token, body,
+            function(retryErr, retryData) {
+              // 410 means the old prefix is gone for good. A 404 is only
+              // taken as moved if the other prefix works, so a missing
+              // memo stays a 404.
+              if (!retryErr || status === 410) {
+                apiPrefixes[base] = other;
+                callback(retryErr, retryData);
+              } else {
+                callback(err, data);
+              }
+            });
+      });
+}
+
+function sendApiRequest(method, url, token, body, callback) {
   var xhr = new XMLHttpRequest();
-  xhr.open(method, apiBase(settings.url) + '/api/v1/' + path, true);
+  xhr.open(method, url, true);
   xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.setRequestHeader('Authorization', 'Bearer ' + settings.token);
+  xhr.setRequestHeader('Authorization', 'Bearer ' + token);
   xhr.timeout = TIMEOUT_MS;
 
   xhr.onload = function() {
     if (xhr.status < 200 || xhr.status >= 300) {
-      callback('Server error ' + xhr.status);
+      callback('Server error ' + xhr.status, null, xhr.status);
       return;
     }
     var data = {};
     try {
       if (xhr.responseText) data = JSON.parse(xhr.responseText);
     } catch (err) {
-      callback('Invalid response');
+      callback('Invalid response', null, xhr.status);
       return;
     }
-    callback(null, data);
+    callback(null, data, xhr.status);
   };
   xhr.onerror = function() {
     callback('Network error');
@@ -1089,7 +1127,8 @@ function handleListComments(req) {
       replyError(req, err);
       return;
     }
-    var comments = (data.memos || [])
+    // Memos 26.10 renamed the field from memos to comments
+    var comments = (data.comments || data.memos || [])
                        .filter(function(comment) {
                          // archived comments are not shown
                          return comment.state !== 'ARCHIVED' &&

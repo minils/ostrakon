@@ -87,6 +87,13 @@ memos.push({
 });
 const created = [], comments = [];
 let serverDown = false;
+// Memos 26.10 and later: /api/v1/... is gone (410), the API is at /api/...
+let newApi = false;
+// requests per API version, to check the version is detected only once
+const versionRequests = {
+  v1: 0,
+  new: 0
+};
 let userRequests = 0;
 // GET requests per path, to check that the server is always asked
 const gets = {};
@@ -95,11 +102,24 @@ const server = http.createServer((req, res) => {
   let body = '';
   req.on('data', c => body += c);
   req.on('end', () => {
+    const legacy = req.url.startsWith('/api/v1/');
+    versionRequests[legacy ? 'v1' : 'new']++;
+    if (newApi && legacy) {
+      res.writeHead(410, {'Content-Type': 'application/json'});
+      return res.end('{"code":12,"message":"API v1 has been removed."}');
+    }
+    if (!newApi && !legacy && req.url.startsWith('/api/')) {
+      // older servers serve the web app for unknown paths
+      res.writeHead(200, {'Content-Type': 'text/html'});
+      return res.end('<!doctype html>');
+    }
     if (req.headers.authorization !== 'Bearer tok') {
       res.writeHead(401);
       return res.end('{}');
     }
-    const u = new URL(req.url, 'http://x');
+    // paths below are written in the /api/v1 form
+    const u =
+        new URL(req.url.replace(/^\/api\/(?!v1\/)/, '/api/v1/'), 'http://x');
     const send = (code, obj) => {
       res.writeHead(code, {'Content-Type': 'application/json'});
       res.end(JSON.stringify(obj));
@@ -134,7 +154,8 @@ const server = http.createServer((req, res) => {
     }
     if ((m = u.pathname.match(/^\/api\/v1\/(memos\/[\w]+)\/comments$/)) &&
         req.method === 'GET') {
-      return send(200, {memos: memos.filter(x => x.parent === m[1])});
+      const list = memos.filter(x => x.parent === m[1]);
+      return send(200, newApi ? {comments: list} : {memos: list});
     }
     if (req.method === 'GET' && u.pathname === '/api/v1/users/1') {
       userRequests++;
@@ -916,6 +937,25 @@ setTimeout(() => {
   Pebble.getActiveWatchInfo = watchInfo;
   r = await request(5, 'memos/missing');
   assert.strictEqual(r[0].TEXT, 'Server error 404');
+
+  // Memos 26.10 moved the API from /api/v1 to /api; an upgraded server is
+  // followed, and the new prefix is kept after the first 410
+  newApi = true;
+  r = await request(15, 'memos/m3');
+  assert.deepStrictEqual(r.slice(1).map(m => m.ITEM_ID), ['memos/c2']);
+  const counted = {...versionRequests};
+  r = await request(1, null, 'after the upgrade');
+  assert.strictEqual(r[0].STATUS, 0);
+  assert.ok(
+      created[created.length - 1].content.startsWith('after the upgrade'));
+  r = await request(5, 'memos/missing');
+  assert.strictEqual(r[0].TEXT, 'Server error 404');
+  assert.deepStrictEqual(
+      [versionRequests.v1, versionRequests.new - counted.new], [counted.v1, 2]);
+  // a wrong token on the new API is still reported as such
+  store.ostrakon_settings = JSON.stringify({...good, token: 'bad'});
+  r = await request(5, 'memos/m3');
+  assert.strictEqual(r[0].TEXT, 'Server error 401');
 
   console.log('ALL OK');
   server.close();

@@ -756,7 +756,7 @@ setTimeout(() => {
   listeners.showConfiguration({});
   const page = decodeURIComponent(
       openedUrls.pop().replace(/^data:text\/html;charset=utf-8,/, ''));
-  assert.ok(page.includes('Ostrakon') && page.includes('Test connection'));
+  assert.ok(page.includes('Ostrakon') && page.includes('Check server'));
   assert.ok(page.includes(good.url) && page.includes('#home'));
   const saved = JSON.parse(store.ostrakon_settings);
   assert.deepStrictEqual(saved, {
@@ -798,9 +798,9 @@ setTimeout(() => {
   const germanPage = decodeURIComponent(
       openedUrls.pop().replace(/^data:text\/html;charset=utf-8,/, ''));
   assert.ok(
-      germanPage.includes('Verbindung testen') &&
-      germanPage.includes('Sprache'));
-  assert.ok(germanPage.includes('Test von dieser Seite nicht m'));
+      germanPage.includes('Server prüfen') && germanPage.includes('Sprache'));
+  assert.ok(
+      germanPage.includes('Server von dieser Seite aus nicht erreichbar'));
 
   // French, Spanish and Italian, each with its spoken keywords
   const languages = [
@@ -813,7 +813,7 @@ setTimeout(() => {
       spoken: 'Grand titre Courses nouvelle ligne case à cocher Lait. ' +
           'Hashtag Cuisine',
       content: '# Courses\n- [ ] Lait.\n\n#pebble #cuisine',
-      page: 'Tester la connexion'
+      page: 'Vérifier le serveur'
     },
     {
       language: 'es',
@@ -824,7 +824,7 @@ setTimeout(() => {
       spoken: 'Título grande Compra nueva línea casilla de verificación ' +
           'Leche. Hashtag Cocina',
       content: '# Compra\n- [ ] Leche.\n\n#pebble #cocina',
-      page: 'Probar conexión'
+      page: 'Comprobar servidor'
     },
     {
       language: 'it',
@@ -835,7 +835,7 @@ setTimeout(() => {
       spoken: 'Titolo grande Spesa nuova riga casella di controllo Latte. ' +
           'Hashtag Cucina',
       content: '# Spesa\n- [ ] Latte.\n\n#pebble #cucina',
-      page: 'Prova connessione'
+      page: 'Verifica server'
     }
   ];
   for (const l of languages) {

@@ -106,7 +106,7 @@ Open the app settings in the Pebble app on your phone:
 
 * **Memos Server URL**, e.g. `https://memos.example.com`
 * **Access Token**, created in the Memos settings
-* **Test connection** checks URL and token. After saving, the watch also shows whether the connection works.
+* **Check server** checks that the server can be reached from the settings page. It cannot check the token, as Memos does not let the page read the server's answers, and a server in your local network may not be reachable from the page. After saving, the watch shows whether URL and token work.
 * **Default Tags** added to every new memo, e.g. `#pebble`
 * **To-do Tag** whose open tasks the app glance counts, `#todo` by default
 * **Spoken Keywords**: the spoken words for markdown, see *Spoken keywords*

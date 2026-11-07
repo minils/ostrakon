@@ -248,9 +248,10 @@ var PAGE = {
     url: 'Memos Server URL',
     urlHint: 'Example: https://memos.example.com',
     token: 'Access Token',
-    tokenHint: 'Create one in Memos under Settings, Access Tokens.',
+    tokenHint:
+        'Create one in Memos under Settings, Access Tokens. The watch checks it after saving.',
     tokenPlaceholder: 'Your access token',
-    test: 'Test connection',
+    test: 'Check server',
     memos: 'Memos',
     tags: 'Default Tags',
     tagsHint: 'Added to every new memo, separated by spaces.',
@@ -271,14 +272,11 @@ var PAGE = {
     languageAuto: 'Automatic (watch language)',
     save: 'Save',
     // used by clay-custom.js
-    testMissing: 'Enter the server URL and token first.',
-    testRunning: 'Testing...',
-    testOk: 'Connected. URL and token work.',
-    testRejected: 'The server rejected the token (%s).',
-    testNotFound: 'No Memos API found at this URL (404).',
-    testServerError: 'Server error %s.',
-    testUnavailable: 'Could not test from this page. Save, and the watch ' +
-        'will show whether the connection works.'
+    testMissing: 'Enter the server URL first.',
+    testRunning: 'Checking...',
+    testOk: 'Server reachable. The watch checks the token after saving.',
+    testUnreachable:
+        'Server not reachable from this page. Check the URL. A server in your local network can only be checked by the watch, after saving.'
   },
   de: {
     tagline: 'Dein selbst gehosteter Memos-Server am Handgelenk.',
@@ -286,9 +284,10 @@ var PAGE = {
     url: 'Memos-Server-URL',
     urlHint: 'Beispiel: https://memos.example.com',
     token: 'Zugangstoken',
-    tokenHint: 'Erstelle eins in Memos unter Einstellungen, Zugangstoken.',
+    tokenHint:
+        'Erstelle eins in Memos unter Einstellungen, Zugangstoken. Die Uhr prüft es nach dem Speichern.',
     tokenPlaceholder: 'Dein Zugangstoken',
-    test: 'Verbindung testen',
+    test: 'Server prüfen',
     memos: 'Memos',
     tags: 'Standard-Tags',
     tagsHint: 'Werden jedem neuen Memo angehängt, durch Leerzeichen getrennt.',
@@ -308,14 +307,11 @@ var PAGE = {
     language: 'Sprache',
     languageAuto: 'Automatisch (Sprache der Uhr)',
     save: 'Speichern',
-    testMissing: 'Bitte zuerst Server-URL und Token eingeben.',
-    testRunning: 'Wird getestet...',
-    testOk: 'Verbunden. URL und Token funktionieren.',
-    testRejected: 'Der Server hat das Token abgelehnt (%s).',
-    testNotFound: 'Keine Memos-API unter dieser URL gefunden (404).',
-    testServerError: 'Serverfehler %s.',
-    testUnavailable: 'Test von dieser Seite nicht möglich. Speichere, dann ' +
-        'zeigt die Uhr, ob die Verbindung funktioniert.'
+    testMissing: 'Bitte zuerst die Server-URL eingeben.',
+    testRunning: 'Wird geprüft...',
+    testOk: 'Server erreichbar. Das Token prüft die Uhr nach dem Speichern.',
+    testUnreachable:
+        'Server von dieser Seite aus nicht erreichbar. Prüfe die URL. Einen Server im Heimnetz kann nur die Uhr prüfen, nach dem Speichern.'
   },
   fr: {
     tagline: 'Votre serveur Memos auto-hébergé à votre poignet.',
@@ -323,9 +319,10 @@ var PAGE = {
     url: 'URL du serveur Memos',
     urlHint: 'Exemple\u00a0: https://memos.example.com',
     token: 'Jeton d\'accès',
-    tokenHint: 'Créez-en un dans Memos sous Paramètres, Jetons d\'accès.',
+    tokenHint:
+        'Créez-en un dans Memos sous Paramètres, Jetons d\'accès. La montre le vérifie après l\'enregistrement.',
     tokenPlaceholder: 'Votre jeton d\'accès',
-    test: 'Tester la connexion',
+    test: 'Vérifier le serveur',
     memos: 'Mémos',
     tags: 'Tags par défaut',
     tagsHint: 'Ajoutés à chaque nouveau mémo, séparés par des espaces.',
@@ -345,14 +342,12 @@ var PAGE = {
     language: 'Langue',
     languageAuto: 'Automatique (langue de la montre)',
     save: 'Enregistrer',
-    testMissing: 'Saisissez d\'abord l\'URL du serveur et le jeton.',
-    testRunning: 'Test en cours...',
-    testOk: 'Connecté. L\'URL et le jeton fonctionnent.',
-    testRejected: 'Le serveur a refusé le jeton (%s).',
-    testNotFound: 'Aucune API Memos à cette URL (404).',
-    testServerError: 'Erreur du serveur %s.',
-    testUnavailable: 'Impossible de tester depuis cette page. Enregistrez, ' +
-        'et la montre indiquera si la connexion fonctionne.'
+    testMissing: 'Saisissez d\'abord l\'URL du serveur.',
+    testRunning: 'Vérification...',
+    testOk:
+        'Serveur joignable. La montre vérifie le jeton après l\'enregistrement.',
+    testUnreachable:
+        'Serveur injoignable depuis cette page. Vérifiez l\'URL. Un serveur de votre réseau local ne peut être vérifié que par la montre, après l\'enregistrement.'
   },
   es: {
     tagline: 'Tu servidor Memos autoalojado en tu muñeca.',
@@ -360,9 +355,10 @@ var PAGE = {
     url: 'URL del servidor Memos',
     urlHint: 'Ejemplo: https://memos.example.com',
     token: 'Token de acceso',
-    tokenHint: 'Crea uno en Memos en Ajustes, Tokens de acceso.',
+    tokenHint:
+        'Crea uno en Memos en Ajustes, Tokens de acceso. El reloj lo comprueba al guardar.',
     tokenPlaceholder: 'Tu token de acceso',
-    test: 'Probar conexión',
+    test: 'Comprobar servidor',
     memos: 'Memos',
     tags: 'Etiquetas predeterminadas',
     tagsHint: 'Se añaden a cada memo nuevo, separadas por espacios.',
@@ -382,14 +378,11 @@ var PAGE = {
     language: 'Idioma',
     languageAuto: 'Automático (idioma del reloj)',
     save: 'Guardar',
-    testMissing: 'Introduce primero la URL del servidor y el token.',
-    testRunning: 'Probando...',
-    testOk: 'Conectado. La URL y el token funcionan.',
-    testRejected: 'El servidor rechazó el token (%s).',
-    testNotFound: 'No hay ninguna API de Memos en esta URL (404).',
-    testServerError: 'Error del servidor %s.',
-    testUnavailable: 'No se puede probar desde esta página. Guarda y el ' +
-        'reloj mostrará si la conexión funciona.'
+    testMissing: 'Introduce primero la URL del servidor.',
+    testRunning: 'Comprobando...',
+    testOk: 'Servidor accesible. El reloj comprueba el token al guardar.',
+    testUnreachable:
+        'Servidor no accesible desde esta página. Comprueba la URL. Un servidor de tu red local solo lo puede comprobar el reloj, al guardar.'
   },
   it: {
     tagline: 'Il tuo server Memos self-hosted al polso.',
@@ -397,9 +390,10 @@ var PAGE = {
     url: 'URL del server Memos',
     urlHint: 'Esempio: https://memos.example.com',
     token: 'Token di accesso',
-    tokenHint: 'Creane uno in Memos in Impostazioni, Token di accesso.',
+    tokenHint:
+        'Creane uno in Memos in Impostazioni, Token di accesso. L\'orologio lo verifica dopo il salvataggio.',
     tokenPlaceholder: 'Il tuo token di accesso',
-    test: 'Prova connessione',
+    test: 'Verifica server',
     memos: 'Memo',
     tags: 'Tag predefiniti',
     tagsHint: 'Aggiunti a ogni nuovo memo, separati da spazi.',
@@ -419,14 +413,12 @@ var PAGE = {
     language: 'Lingua',
     languageAuto: 'Automatica (lingua dell\'orologio)',
     save: 'Salva',
-    testMissing: 'Inserisci prima l\'URL del server e il token.',
-    testRunning: 'Prova in corso...',
-    testOk: 'Connesso. URL e token funzionano.',
-    testRejected: 'Il server ha rifiutato il token (%s).',
-    testNotFound: 'Nessuna API Memos a questo URL (404).',
-    testServerError: 'Errore del server %s.',
-    testUnavailable: 'Impossibile provare da questa pagina. Salva e ' +
-        'l\'orologio mostrerà se la connessione funziona.'
+    testMissing: 'Inserisci prima l\'URL del server.',
+    testRunning: 'Verifica in corso...',
+    testOk:
+        'Server raggiungibile. L\'orologio verifica il token dopo il salvataggio.',
+    testUnreachable:
+        'Server non raggiungibile da questa pagina. Controlla l\'URL. Un server nella rete locale può essere verificato solo dall\'orologio, dopo il salvataggio.'
   }
 };
 

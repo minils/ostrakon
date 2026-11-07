@@ -127,48 +127,49 @@ module.exports = function() {
       result.set('<span style="color:' + color + '">' + text + '</span>');
     }
 
+    // The page is a data: URL, so its requests have the origin "null",
+    // which Memos does not allow for CORS: the page cannot read any answer
+    // and so cannot check the token. A no-cors request still tells whether
+    // the server answers at all; the watch checks the token after saving.
+    // Browsers may block requests from such a page to the local network, so
+    // a server at home can fail here and still work from the watch.
     clayConfig.getItemById('testConnection').on('click', function() {
       var url =
           String(clayConfig.getItemByMessageKey('SETTING_URL').get() || '')
               .trim()
               .replace(/\/+$/, '')
               .replace(/\/api(\/v1)?\/memos$/, '');
-      var token =
-          String(clayConfig.getItemByMessageKey('SETTING_TOKEN').get() || '')
-              .trim();
-      if (!url || !token) {
+      if (!url) {
         show(t.testMissing, '#ff8a80');
         return;
       }
 
       show(t.testRunning, '#cccccc');
-      // auth/me needs a valid token; Memos before 26.10 serves it under
-      // /api/v1, later versions under /api and answer /api/v1 with 410
-      function check(prefixes) {
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', url + prefixes[0] + 'auth/me', true);
-        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-        xhr.timeout = 10000;
-        xhr.onload = function() {
-          if ((xhr.status === 404 || xhr.status === 410) &&
-              prefixes.length > 1) {
-            check(prefixes.slice(1));
-          } else if (xhr.status >= 200 && xhr.status < 300) {
-            show(t.testOk, '#69f0ae');
-          } else if (xhr.status === 401 || xhr.status === 403) {
-            show(t.testRejected.replace('%s', xhr.status), '#ff8a80');
-          } else if (xhr.status === 404) {
-            show(t.testNotFound, '#ff8a80');
-          } else {
-            show(t.testServerError.replace('%s', xhr.status), '#ff8a80');
-          }
-        };
-        xhr.onerror = xhr.ontimeout = function() {
-          show(t.testUnavailable, '#cccccc');
-        };
-        xhr.send();
+      var done = false;
+      function finish(reachable) {
+        if (done) return;
+        done = true;
+        if (reachable)
+          show(t.testOk, '#69f0ae');
+        else
+          show(t.testUnreachable, '#ff8a80');
       }
-      check(['/api/v1/', '/api/']);
+      setTimeout(function() {
+        finish(false);
+      }, 10000);
+      try {
+        fetch(url + '/', {mode: 'no-cors', cache: 'no-store'})
+            .then(
+                function() {
+                  finish(true);
+                },
+                function() {
+                  finish(false);
+                });
+      } catch (err) {
+        // an invalid URL
+        finish(false);
+      }
     });
   });
 };

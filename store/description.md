@@ -28,7 +28,7 @@ Organize
 • Pin, archive and delete memos; archive and delete comments
 • The launcher shows how many tasks are open in your to-do memos
 
-Setup: open the app settings on your phone, enter your Memos server URL and an access token, and test the connection right there.
+Setup: open the app settings on your phone, enter your Memos server URL and an access token, and save; the watch shows right away whether the connection works.
 
 Privacy: Ostrakon only talks to the Memos server you configure. Your URL and token are stored on your phone. There is no tracking and no third-party service.
 

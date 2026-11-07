@@ -1407,7 +1407,8 @@ function sendWatchSettings() {
 
 // Tells the watch right away if the server or token do not work
 function testConnection() {
-  apiRequest('GET', 'memos?pageSize=1', null, function(err) {
+  // auth/me fails without a valid token; memos can be public
+  apiRequest('GET', 'auth/me', null, function(err) {
     if (!err)
       notifyWatch('Connected to Memos', true);
     else if (err === 'Server error 401' || err === 'Server error 403') {

@@ -144,7 +144,8 @@ function handle(method, path, query, body) {
 
 http.createServer(function(req, res) {
   var url = new URL(req.url, 'http://localhost');
-  var path = url.pathname.replace(/^\/api\/v1\//, '');
+  // Memos 26.10 moved the API from /api/v1 to /api; both are served
+  var path = url.pathname.replace(/^\/api\/(v1\/)?/, '');
   var query = {};
   url.searchParams.forEach(function(value, key) {
     query[key] = value;

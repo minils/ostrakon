@@ -119,6 +119,7 @@ The app has two parts: the watch app in C (`src/c`) and the phone part in Pebble
 
 * Build with the [Pebble SDK](https://developer.repebble.com): `pebble build`. The phone-side JS is minified by `tools/minify.js`; the source map keeps stack traces readable.
 * Run the phone-side tests against a mock Memos server: `node test/pkjs.test.js`, or against the built, minified bundle with `PKJS_BUNDLE=build/pebble-js-app.js node test/pkjs.test.js`
+* Run them against a real, fresh Memos server: `docker run -d -p 5230:5230 neosmemo/memos:stable`, then `MEMOS_URL=http://localhost:5230 node test/memos.test.js`. The CI does this for the newest Memos release and 0.31.0, also once a week
 * Screenshots of the settings page for this README: `node store/settings_screenshots.js` (needs [Playwright](https://playwright.dev) with Chromium)
 * Screenshots of the app, for the store and the homepage's watch, with demo data in the emulator: `~/.local/share/uv/tools/pebble-tool/bin/python store/take_screenshots.py` after `pebble build` (it runs `store/demo_server.js`, a stand-in Memos server, and wipes the emulators it uses)
 * Translations: the watch texts are in `resources/lang/*.txt` (one file per language, loaded only for the language in use), the phone texts and the settings page in `src/pkjs/i18n.js`. Check the watch translations with `node test/i18n.test.js`.

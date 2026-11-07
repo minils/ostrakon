@@ -1,0 +1,50 @@
+name: Memos
+
+# Runs the phone-side JS against real Memos servers: the newest stable
+# release and the last release before the API moved from /api/v1 to /api.
+# The weekly run catches breaking changes in new Memos releases even when
+# nothing changes here.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 6 * * 1'
+
+concurrency:
+  group: memos-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  integration:
+    name: Memos ${{ matrix.memos }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        memos: [stable, 0.31.0]
+    services:
+      memos:
+        image: neosmemo/memos:${{ matrix.memos }}
+        ports:
+          - 5230:5230
+        env:
+          MEMOS_MODE: prod
+          MEMOS_INSTANCE_URL: http://localhost:5230
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Test against Memos
+        run: node test/memos.test.js
+        env:
+          MEMOS_URL: http://localhost:5230
+
+      - name: Memos server log
+        if: failure()
+        run: docker logs "${{ job.services.memos.id }}"

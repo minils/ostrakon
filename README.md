@@ -8,6 +8,8 @@ A Pebble watch app for your self-hosted [Memos](https://github.com/usememos/memo
 
 An *ostrakon* is a piece of broken pottery that people in antiquity used to write short notes on, which is also where the app icon comes from.
 
+[![Get it on the Pebble appstore](https://img.shields.io/badge/Pebble_appstore-Get_Ostrakon-FF5500)](https://apps.repebble.com/ostrakon_a7c45f69284a43abbeeb3ebe)
+
 **Homepage: [minils.de/ostrakon](https://minils.de/ostrakon/)**, with screenshots for every watch and a playground to try the spoken keywords in the browser.
 
 <table>

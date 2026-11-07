@@ -5,6 +5,7 @@
   var REPO = 'minils/ostrakon';
   var REPO_URL = 'https://github.com/' + REPO;
   var RELEASES_URL = REPO_URL + '/releases';
+  var APPSTORE_URL = 'https://apps.repebble.com/ostrakon_a7c45f69284a43abbeeb3ebe';
   var reduceMotion = window.matchMedia &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -560,7 +561,8 @@
     help: function() {
       return 'commands:\n' + [
         ['about', 'what is this'], ['features', 'what it does'],
-        ['release', 'latest release'], ['github', 'open the repository'],
+        ['release', 'latest release'], ['appstore', 'open the Pebble appstore'],
+        ['github', 'open the repository'],
         ['releases', 'open the releases page'], ['platforms', 'supported watches'],
         ['dictate <text>', 'run the keyword parser'], ['cat package.json', ''],
         ['theme [auto|light|dark]', ''], ['clear', ''], ['exit', '']
@@ -584,6 +586,10 @@
         return release.tag + ' (' + release.date + ')\n' + link(release.pbw || release.url);
       }
       return '<span class="t-c">no release found yet.</span> try: ' + link(RELEASES_URL);
+    },
+    appstore: function() {
+      window.open(APPSTORE_URL, '_blank', 'noopener');
+      return 'opening ' + link(APPSTORE_URL);
     },
     github: function() { window.open(REPO_URL, '_blank', 'noopener'); return 'opening ' + link(REPO_URL); },
     releases: function() {

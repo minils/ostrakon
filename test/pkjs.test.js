@@ -90,7 +90,10 @@ let serverDown = false;
 // Memos 26.10 and later: /api/v1/... is gone (410), the API is at /api/...
 let newApi = false;
 // requests per API version, to check the version is detected only once
-const versionRequests = {v1: 0, new: 0};
+const versionRequests = {
+  v1: 0,
+  new: 0
+};
 let userRequests = 0;
 // GET requests per path, to check that the server is always asked
 const gets = {};
@@ -115,7 +118,8 @@ const server = http.createServer((req, res) => {
       return res.end('{}');
     }
     // paths below are written in the /api/v1 form
-    const u = new URL(req.url.replace(/^\/api\/(?!v1\/)/, '/api/v1/'), 'http://x');
+    const u =
+        new URL(req.url.replace(/^\/api\/(?!v1\/)/, '/api/v1/'), 'http://x');
     const send = (code, obj) => {
       res.writeHead(code, {'Content-Type': 'application/json'});
       res.end(JSON.stringify(obj));
@@ -942,12 +946,12 @@ setTimeout(() => {
   const counted = {...versionRequests};
   r = await request(1, null, 'after the upgrade');
   assert.strictEqual(r[0].STATUS, 0);
-  assert.ok(created[created.length - 1].content.startsWith('after the upgrade'));
+  assert.ok(
+      created[created.length - 1].content.startsWith('after the upgrade'));
   r = await request(5, 'memos/missing');
   assert.strictEqual(r[0].TEXT, 'Server error 404');
   assert.deepStrictEqual(
-      [versionRequests.v1, versionRequests.new - counted.new],
-      [counted.v1, 2]);
+      [versionRequests.v1, versionRequests.new - counted.new], [counted.v1, 2]);
   // a wrong token on the new API is still reported as such
   store.ostrakon_settings = JSON.stringify({...good, token: 'bad'});
   r = await request(5, 'memos/m3');

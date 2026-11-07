@@ -409,7 +409,7 @@
       ['cmd', '# hold the button and say:'],
       ['out', '<span class="t-o">“' + said + '”</span>'],
       ['cmd', '# what lands in your Memos:'],
-      ['out', '<span class="t-c">POST /api/v1/memos → 200 OK</span>'],
+      ['out', '<span class="t-c">POST /api/memos → 200 OK</span>'],
       ['out', highlightMarkdown(md).replace(/class="m-h"/g, 'class="t-o"')
           .replace(/class="m-t"/g, 'class="t-p"').replace(/class="m-tag"/g, 'class="t-d"')]
     ];

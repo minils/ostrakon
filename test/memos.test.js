@@ -198,10 +198,10 @@ setTimeout(() => {
 
 (async () => {
   await waitForServer();
-  const profile = await (await fetch(MEMOS_URL + '/api/instance/profile'))
-                      .json()
-                      .catch(() => null);
-  console.log('Memos', profile ? profile.version : '< 26.10');
+  // older versions answer /api/instance/profile with a 404
+  const profile = await fetch(MEMOS_URL + '/api/instance/profile');
+  console.log(
+      'Memos', profile.ok ? (await profile.json()).version : 'before 26.10');
   const token = await createToken();
 
   // the settings check the connection right away
